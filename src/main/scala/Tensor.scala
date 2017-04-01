@@ -14,7 +14,18 @@ case class Tensor(content: Array[Int], dimensions: Dimensions) {
 
   lazy val rank = dimensions.length
 
-  def ~ (tensor: Tensor) = TensorPair(this, tensor)
+  def contract (other: Tensor, dimensionsCnt: Int) = {
+
+    val Seq(contractedDims, contractedDims2) = Seq(this, other) map (_.dimensions subDimensions dimensionsCnt)
+    if (contractedDims != contractedDims2) throw InvalidContractionArgumentException(contractedDims, contractedDims2)
+
+    val remainingDims = Seq(this, other) map (_.dimensions.cut(dimensionsCnt)) reduce (_++_)
+
+    remainingDims makeTensor {remainingIndices =>
+      val (t1indices, t2indices) = remainingIndices splitAt (this.rank - dimensionsCnt)
+      contractedDims map { indices => this(t1indices ++ indices) * other(t2indices ++ indices)} sum
+    }
+  }
 
   def apply(indices:Seq[Int]) = content(dimensions indexOf indices)
 }
@@ -52,17 +63,3 @@ case class Dimensions(sizes:Seq[Int]) {
   def makeTensor(maker:Seq[Int] => Int):Tensor = Tensor(this map maker toArray, this)
 }
 
-case class TensorPair(t1:Tensor, t2:Tensor) {
-  def contractBy(dimensionsCnt: Int) = {
-
-    val Seq(contractedDims, contractedDims2) = Seq(t1, t2) map (_.dimensions subDimensions dimensionsCnt)
-    if (contractedDims != contractedDims2) throw InvalidContractionArgumentException(contractedDims, contractedDims2)
-
-    val remainingDims = Seq(t1, t2) map (_.dimensions.cut(dimensionsCnt)) reduce (_++_)
-
-    remainingDims makeTensor {remainingIndices =>
-      val (t1indices, t2indices) = remainingIndices splitAt (t1.rank - dimensionsCnt)
-      contractedDims map { indices => t1(t1indices ++ indices) * t2(t2indices ++ indices)} sum
-    }
-  }
-}
