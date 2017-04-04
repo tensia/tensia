@@ -14,10 +14,16 @@ case class Tensor(content: IndexedSeq[Int], dimensions: Dimensions) {
 
   lazy val rank = dimensions.length
 
+  /**
+    * Contacts two tensors by dimensionsCnt rightmost dimensions
+    * @param other Tensor to be contacted with this
+    * @param dimensionsCnt amount of rightmost dimensions that should be contacted
+    * @return Tensor being result of contraction this and other
+    */
   def contract (other: Tensor, dimensionsCnt: Int) = {
 
-    val (remainingDims, contractedDims) = dimensions splitRight dimensionsCnt
-    val (otherRemainingDims, otherContractedDims) = other.dimensions splitRight dimensionsCnt
+    val (remainingDims, contractedDims) = dimensions split -dimensionsCnt
+    val (otherRemainingDims, otherContractedDims) = other.dimensions split -dimensionsCnt
 
     if (contractedDims != otherContractedDims) throw InvalidContractionArgumentException(contractedDims, otherContractedDims)
 
@@ -48,17 +54,30 @@ case class Dimensions(sizes:IndexedSeq[Int]) {
 
   def indicesOf(index:Int):Seq[Int] = sizes map (index % _)
 
-  def splitRight(rightLen:Int) = sizes splitAt (length - rightLen) match {
-    case (leftDims, rightDims) => (Dimensions(leftDims), Dimensions(rightDims))
+  /**
+    * splits dimensions into two parts, according to given length
+    * @param len - if positive, length of the left split part, otherwise length of the right split part
+    * @return 2-element tuple of Dimensions
+    */
+  def split(len:Int):(Dimensions, Dimensions) = sizes splitAt (if (len < 0) this.length + len else len) match {
+    case (leftSizes, rightSizes) => (Dimensions(leftSizes), Dimensions(rightSizes))
   }
 
   def ++(other:Dimensions) = Dimensions(sizes ++ other.sizes)
 
+  /**
+    * @return lazy sequence of all possible indices' values
+    */
   def all: SeqView[Seq[Int], Seq[_]] =
     length match {
       case 0 => Seq() view
       case _ => (0 until totalSize) map indicesOf view
     }
 
+  /**
+    * Creates tensor of content being result of applying mapper to each value of indices
+    * @param maker function mapping indices to value of tensor at these indices
+    * @return Tensor of content produced as written above, and dimensions of this
+    */
   def makeTensor(maker:Seq[Int] => Int):Tensor = Tensor(all map maker toIndexedSeq, this)
 }
