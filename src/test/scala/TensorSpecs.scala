@@ -13,7 +13,7 @@ class TensorSpecs extends FunSpec with Matchers {
         Tensor(Vector(1, 2, 3, 4, 5, 6), 2, 3)
       }
       describe("if content size does not match product of dimensions") {
-        it("should throw InvalidTensorSizeException") {
+        it("should throw error") {
           assertThrows[InvalidTensorSizeError] {
             Tensor(Vector(1, 2, 3, 4), 2, 4)
           }
@@ -27,7 +27,7 @@ class TensorSpecs extends FunSpec with Matchers {
       }
 
       describe("if contracted dimensions' sizes differ") {
-        it("should throw InvalidContractionArgumentException") {
+        it("should throw error") {
           assertThrows[InvalidContractionArgumentError] {
             Tensor(Vector(3, 4, 5, 6, 7, 8), 2, 3) ~ 1 ~ Tensor(Vector(1, 2, 5, 7), 2, 2)
           }
@@ -38,6 +38,17 @@ class TensorSpecs extends FunSpec with Matchers {
     describe("reDim") {
       it("should create Tensor with reordered dimensions") {
         Tensor(Vector(1, 2, 5, 7, 7, 6), 3, 2) reDim Seq(1, 0) shouldEqual Tensor(Vector(1, 7, 7, 2, 5, 6), 2, 3)
+      }
+      describe("if order is invalid") {
+        it("should throw error") {
+          assertThrows[InvalidTensorReDimOrderError] {
+            Tensor(Vector(1, 2, 5, 7, 7, 6), 3, 2) reDim Seq(1, 1)
+          }
+          assertThrows[InvalidTensorReDimOrderError] {
+            Tensor(Vector(1, 2, 5, 7, 7, 6), 3, 2) reDim Seq(1, 3)
+          }
+        }
+
       }
     }
 

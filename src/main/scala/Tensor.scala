@@ -7,6 +7,7 @@ import scala.collection.{SeqView, mutable}
 trait TensorError extends Error
 case class InvalidTensorSizeError(size:Int, dimensionsTotalSize:Int) extends TensorError
 case class InvalidContractionArgumentError(dims1: Dimensions, dims2:Dimensions) extends TensorError
+case class InvalidTensorReDimOrderError(order: Seq[Int]) extends TensorError
 
 case class Tensor(content: Seq[Int], dimensions: Dimensions) {
   if (content.length != dimensions.totalSize) throw InvalidTensorSizeError(content.length, dimensions.totalSize)
@@ -76,8 +77,12 @@ case class Dimensions(sizes:IndexedSeq[Int]) {
     * @param order seq which index corresponds to current dimension no, and value to its new number
     * @return reordered [[Dimensions]]
     */
-  //TODO: throw exception if order is incompatible
-  def reorder(order: Seq[Int]) = Dimensions(order map sizes toIndexedSeq)
+  def reorder(order: Seq[Int]) = {
+    if (order.distinct != order || !order.forall(0 until length contains _)) {
+      throw InvalidTensorReDimOrderError(order)
+    }
+    Dimensions(order map sizes toIndexedSeq)
+  }
 
   def indexOf(indices:Seq[Int]):Int =
     indices zip shiftedSizes map { case (dim, dimSize) => dim*dimSize } sum
