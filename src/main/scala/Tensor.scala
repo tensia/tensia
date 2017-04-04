@@ -16,17 +16,16 @@ case class Tensor(content: IndexedSeq[Int], dimensions: Dimensions) {
 
   def contract (other: Tensor, dimensionsCnt: Int) = {
 
-    val Seq(contractedDims, contractedDims2) = Seq(this, other) map (_.dimensions subDimensions dimensionsCnt)
-    if (contractedDims != contractedDims2) throw InvalidContractionArgumentException(contractedDims, contractedDims2)
+    val (remainingDims, contractedDims) = dimensions splitRight dimensionsCnt
+    val (otherRemainingDims, otherContractedDims) = other.dimensions splitRight dimensionsCnt
 
-    val remainingDims = Seq(this, other) map (_.dimensions.cut(dimensionsCnt)) reduce (_++_)
+    if (contractedDims != otherContractedDims) throw InvalidContractionArgumentException(contractedDims, otherContractedDims)
 
-    remainingDims makeTensor {remainingIndices =>
-      val (t1indices, t2indices) = remainingIndices splitAt (this.rank - dimensionsCnt)
+    (remainingDims ++ otherRemainingDims) makeTensor {remainingIndices =>
+      val (t1indices, t2indices) = remainingIndices splitAt remainingDims.length
       contractedDims.all map { indices => this(t1indices ++ indices) * other(t2indices ++ indices)} sum
     }
   }
-
 
   def apply(indices:Seq[Int]) = content(dimensions indexOf indices)
 }
@@ -49,10 +48,9 @@ case class Dimensions(sizes:IndexedSeq[Int]) {
 
   def indicesOf(index:Int):Seq[Int] = sizes map (index % _)
 
-  def subDimensions(len:Int) = Dimensions(sizes takeRight len)
-
-
-  def cut(len:Int) = Dimensions(sizes take (this.length - len))
+  def splitRight(rightLen:Int) = sizes splitAt (length - rightLen) match {
+    case (leftDims, rightDims) => (Dimensions(leftDims), Dimensions(rightDims))
+  }
 
   def ++(other:Dimensions) = Dimensions(sizes ++ other.sizes)
 
