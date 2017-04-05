@@ -24,6 +24,7 @@ class TensorSpecs extends FunSpec with Matchers {
     describe("contract") {
       it("should return contracted tensor") {
         Tensor(Vector(3, 4), 2) ~ 1 ~ Tensor(Vector(1, 2, 5, 7), 2, 2) shouldEqual Tensor(Vector(11, 43), 2)
+        Tensor(Vector(3, 4, 5, 6), 2, 2) ~ 2 ~ Tensor(Vector(1, 2, 5, 7), 2, 2) shouldEqual Tensor(Vector(90))
       }
 
       describe("if contracted dimensions' sizes differ") {
