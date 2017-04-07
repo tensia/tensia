@@ -1,4 +1,4 @@
-import scala.collection.{SeqView, mutable}
+import scala.collection.SeqView
 
 /**
   * Created by mathek on 31/03/2017.
@@ -28,7 +28,7 @@ case class Tensor(content: Seq[Int], dimensions: Dimensions) {
     * @param dimensionsCnt  amount of rightmost dimensions that should be contacted
     * @return [[Tensor]] being result of contracting this and other
     */
-  def contract (other: Tensor, dimensionsCnt: Int) = {
+  def contract(other: Tensor, dimensionsCnt: Int) = {
 
     val (remainingDims, contractedDims) = dimensions split -dimensionsCnt
     val (otherRemainingDims, otherContractedDims) = other.dimensions split -dimensionsCnt
@@ -39,6 +39,23 @@ case class Tensor(content: Seq[Int], dimensions: Dimensions) {
       val (t1indices, t2indices) = remainingIndices splitAt remainingDims.length
       contractedDims.all map { indices => this(t1indices ++ indices) * other(t2indices ++ indices)} sum
     }
+  }
+
+  /**
+    * Contracts this with another [[Tensor]] by dimensions passed as dims
+    * @param other  [[Tensor]] to be contracted with this
+    * @param dims Sequence of pairs of contracted dimension numbers, where first element in pair corresponds to this'
+    *             dimension, and the second to the others dimension
+    * @return [[Tensor]] being result of contracting this and other
+    */
+  def contract(other: Tensor, dims: Seq[(Int, Int)]): Tensor = {
+    val (thisContractedDims, otherContractedDims) = dims.unzip
+    val thisRemainingDims = (0 until rank) filterNot thisContractedDims.toSet.contains
+    val otherRemainingDims = (0 until other.rank) filterNot otherContractedDims.toSet.contains
+    this reDimView thisRemainingDims ++ thisContractedDims contract (
+        other reDimView otherRemainingDims ++ otherContractedDims,
+        thisContractedDims.length
+      )
   }
 
   /**
@@ -68,7 +85,6 @@ object Tensor {
 case class Dimensions(sizes:IndexedSeq[Int]) {
 
   lazy val length = sizes.length
-  lazy val shiftedSizes:Seq[Int] = sizes.drop(1) ++ Seq(1)
 
   lazy val totalSize = sizes.product
 
@@ -85,9 +101,18 @@ case class Dimensions(sizes:IndexedSeq[Int]) {
   }
 
   def indexOf(indices:Seq[Int]):Int =
-    indices zip shiftedSizes map { case (dim, dimSize) => dim*dimSize } sum
+    (indices zip sizes).foldRight (1, 0) {
+      case ((idx, size), (prod, acc)) => (prod*size, acc+prod*idx)
+    } match {
+      case (prod, res) => res
+    }
 
-  def indicesOf(index:Int):Seq[Int] = sizes map (index % _)
+  def indicesOf(index:Int):Seq[Int] =
+    sizes.foldRight (index, List[Int]()) {
+      case (size, (idx, acc)) => (idx/size, idx % size :: acc)
+    } match {
+      case (prod, res) => res
+    }
 
   /**
     * splits dimensions into two parts, according to given length

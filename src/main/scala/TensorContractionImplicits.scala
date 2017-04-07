@@ -6,10 +6,11 @@ object TensorContractionImplicits {
   implicit def tensorToContractableTensor(tensor: Tensor):ContractableTensor = ContractableTensor(tensor)
 }
 
-case class TensorContraction(tensor: Tensor, dimensionsCnt:Int) {
-  def ~(other:Tensor) = tensor.contract(other, dimensionsCnt)
-}
-
 case class ContractableTensor(tensor:Tensor) {
-  def ~(dimensionsCnt:Int) = TensorContraction(tensor, dimensionsCnt)
+  def ~(dimensionsCnt:Int) = new {
+    def ~(other:Tensor) = tensor contract (other, dimensionsCnt)
+  }
+  def ~(dimensions:Seq[(Int, Int)]) = new {
+    def ~(other:Tensor) = tensor contract (other, dimensions)
+  }
 }
