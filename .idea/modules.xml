@@ -3,7 +3,6 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/projekt-inz-tensia.iml" filepath="$PROJECT_DIR$/.idea/modules/projekt-inz-tensia.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/tensia.iml" filepath="$PROJECT_DIR$/.idea/modules/tensia.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/tensia-build.iml" filepath="$PROJECT_DIR$/.idea/modules/tensia-build.iml" />
     </modules>
   </component>
