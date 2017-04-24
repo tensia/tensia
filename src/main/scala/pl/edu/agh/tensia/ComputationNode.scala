@@ -13,7 +13,7 @@ object ComputationNode {
 }
 
 class ComputationNode[T](tree: Tree[T]) extends Actor with Stash with ActorLogging {
-  private var childrenRes = mutable.LinkedHashMap.empty[ActorRef, Option[T]]
+  private val childrenRes = mutable.LinkedHashMap.empty[ActorRef, Option[T]]
 
   tree match {
     case Node(op, children @_*) =>
@@ -30,7 +30,7 @@ class ComputationNode[T](tree: Tree[T]) extends Actor with Stash with ActorLoggi
       childrenRes put(sender, Some(res))
       // TODO: make computation async
       if (childrenRes.values.forall(_.nonEmpty)) {
-        val nodeValue = tree.asInstanceOf[Node].op(childrenRes.values.map(_.get))
+        val nodeValue = tree.asInstanceOf[Node[T]].op(childrenRes.values.map(_.get).toSeq:_*)
         context.parent ! Result(nodeValue)
       }
   }
