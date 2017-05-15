@@ -88,6 +88,17 @@ case class Dimensions(sizes:IndexedSeq[Int]) {
 
   lazy val totalSize = sizes.product
 
+  def contract(dims:Seq[(Int, Int)], other:Dimensions) = remove(dims.map(_._1).toSet) ++ (other remove dims.map(_._2).toSet)
+
+  def remove(dims:Set[Int]) = Dimensions(sizes.zipWithIndex.view.filterNot{case (_, i) => dims contains i}.map(_._1).toIndexedSeq)
+
+  /**
+    * @param dims   contracted dimensions of this
+    * @param other  other [[Dimensions]]
+    * @return       cost of contranction of this-dimensioned and other-dimensioned [[Tensor]]s
+    */
+  def contractionCost(dims:Seq[Int], other:Dimensions) = totalSize / (dims map sizes product) * other.totalSize
+
   /**
     * Reorders dimensions according to order
     * @param order seq which index corresponds to current dimension no, and value to its new number

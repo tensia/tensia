@@ -5,6 +5,5 @@
 import TensorContractionImplicits._
 
 object Main extends App {
-  val r = Tensor(Vector(1, 2, 5, 7, 7, 6), 3, 2).reDim(Seq(1, 0))
-  r.content foreach {e => print(s"$e ")}
+  BFSContractionOrder.findContractionOrder(Seq(Dimensions(IndexedSeq(1,2,3))), Seq(Seq()))
 }
