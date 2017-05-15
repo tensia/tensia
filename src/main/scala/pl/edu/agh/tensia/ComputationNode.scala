@@ -1,9 +1,10 @@
 package pl.edu.agh.tensia
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, Stash}
+import akka.pattern.pipe
 import pl.edu.agh.tensia.comptree._
 
-import scala.collection.mutable
+import scala.concurrent.Future
 
 case object GetResult
 case class Result[T](r: T)
@@ -13,13 +14,20 @@ object ComputationNode {
 }
 
 class ComputationNode[T](tree: Tree[T]) extends Actor with Stash with ActorLogging {
-  private val childrenRes = mutable.LinkedHashMap.empty[ActorRef, Option[T]]
+  import context.dispatcher
+  private var childrenRes = List.empty[(ActorRef, Option[T])]
 
   tree match {
-    case Node(op, children @_*) =>
-      childrenRes ++= children.map(subTree => (context.actorOf(ComputationNode.props(subTree)), None))
+    case Node(op, l, r) =>
+      childrenRes = List(l, r).map(subTree => {
+        val childActor = context.actorOf(ComputationNode.props(subTree))
+        (childActor, None)
+      })
     case Leaf(provider) =>
-      context.parent ! Result[T](provider.get)
+      val res = Future {
+        Result[T](provider.get)
+      }
+      res pipeTo context.parent
       context stop self
     case Empty =>
       context stop self
@@ -27,11 +35,20 @@ class ComputationNode[T](tree: Tree[T]) extends Actor with Stash with ActorLoggi
 
   override def receive: Receive = {
     case Result(res: T) =>
-      childrenRes put(sender, Some(res))
-      // TODO: make computation async
-      if (childrenRes.values.forall(_.nonEmpty)) {
-        val nodeValue = tree.asInstanceOf[Node[T]].op(childrenRes.values.map(_.get).toSeq:_*)
-        context.parent ! Result(nodeValue)
+      val List(l @ (lc, _), r @ (rc, _)) = childrenRes
+      childrenRes =
+        if (lc == sender) List((lc, Some(res)),r)
+        else List(l, (rc, Some(res)))
+
+
+      if (childrenRes.forall(_._2.nonEmpty)) {
+        val node = tree.asInstanceOf[Node[T]]
+        val List(lv, rv) = childrenRes.map(_._2.get)
+        val nodeValue = Future {
+          Result(node.op(lv, rv))
+        }
+        nodeValue pipeTo context.parent
+        context stop self
       }
   }
 }

@@ -2,7 +2,7 @@ package pl.edu.agh.tensia
 
 
 package object comptree {
-  type Operation[T] = (T*) => T
+  type BinOp[T] = (T, T) => T
 
   class ValProvider[T](producer: () => T) {
     lazy val get: T = producer()
@@ -15,7 +15,7 @@ package object comptree {
   }
 
   sealed trait Tree[+A]
-  case class Node[A](op: Operation[A], children: Tree[A]*) extends Tree[A]
+  case class Node[A](op: BinOp[A], left: Tree[A], right: Tree[A]) extends Tree[A]
   case class Leaf[A](value: ValProvider[A]) extends Tree[A]
   case object Empty extends Tree[Nothing]
 

@@ -8,20 +8,20 @@ class ComputationNodesTest extends org.scalatest.FlatSpec {
   implicit val system = ActorSystem()
   val probe = TestProbe()
 
-  "Computation tree of 3 leaves" should "sum up to 3" in {
-    def op(a: Int*) = a.sum
+  "Computation tree of 2 leaves" should "sum up to 2" in {
+    def op(a: Int, b: Int) = a + b
     val provider = ValProvider.of(1)
-    val tree = Node(op, Leaf(provider), Leaf(provider), Leaf(provider))
+    val tree = Node(op, Leaf(provider), Leaf(provider))
 
     probe.childActorOf(ComputationNode.props(tree))
 
-    probe.expectMsg(Result(3))
+    probe.expectMsg(Result(2))
     succeed
   }
-  
+
   "Computation tree of 1024 leaves and 10 levels" should "sum up to 1024" in {
     val N = 1024
-    def op(a: Int*) = a.sum
+    def op(a: Int, b: Int) = a + b
     val provider = ValProvider.of(1)
     val leaves = (1 to N).map(_ => Leaf(provider)).toList
 
