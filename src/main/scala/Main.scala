@@ -5,6 +5,5 @@
 import TensorContractionImplicits._
 
 object Main extends App {
-//  BFSContractionOrder.findContractionOrder(Seq(Dimensions(IndexedSeq(1,2,3))), Seq(Seq()))
-  println(BFSContractionOrder.x(10))
+  println(BFSContractionOrder.findContractionOrder(Seq()))
 }

@@ -9,11 +9,11 @@ extern "C" {
 #endif
 /*
  * Class:     BFSContractionOrder__
- * Method:    x
- * Signature: (I)I
+ * Method:    ord
+ * Signature: ([I[[I)J
  */
-JNIEXPORT jint JNICALL Java_BFSContractionOrder_00024_x
-  (JNIEnv *, jobject, jint);
+JNIEXPORT jlong JNICALL Java_BFSContractionOrder_00024_ord
+  (JNIEnv *, jobject, jintArray, jobjectArray);
 
 #ifdef __cplusplus
 }
