@@ -1,34 +1,4 @@
-#include<stdio.h>
-#include<stdint.h>
-#include<stdlib.h>
-#include<glib.h>
-
-#define max(A, B) ((A) >= (B) ? (A) : (B))
-
-const int de_brujin_array[64] =
-{
-    0,  1,  2, 53,  3,  7, 54, 27,
-    4, 38, 41,  8, 34, 55, 48, 28,
-   62,  5, 39, 46, 44, 42, 22,  9,
-   24, 35, 59, 56, 49, 18, 29, 11,
-   63, 52,  6, 26, 37, 40, 33, 47,
-   61, 45, 43, 21, 23, 58, 17, 10,
-   51, 25, 36, 32, 60, 20, 57, 16,
-   50, 31, 19, 15, 30, 14, 13, 12,
-};
-
-//returns position of the least significant one in binary number
-#define de_brujin(n) \
-  (de_brujin_array[((uint64_t)(n&(-n))*0x022fdd63cc95386d) >> 58])
-
-#define iterate_bin(t, bin, i, fun) ({ \
-  t bin_cp = bin; \
-  while(bin_cp > 0) { \
-    i = de_brujin(bin_cp); \
-    fun; \
-    bin_cp &= (bin_cp-1); \
-  } \
-});
+#include "ord.h"
 
 typedef struct {
   uint64_t total_cost;
@@ -40,10 +10,6 @@ static inline Tensor* mk_tensor(int64_t total_cost, int32_t size, int64_t origin
   Tensor* t = malloc(sizeof(Tensor));
   *t = (Tensor){.total_cost=total_cost, .size=size, .origin=origin};
   return t;
-}
-
-void printbits(uint64_t v, char size) {
-  for(int i = size-1; i >= 0; i--) putchar('0' + ((v >> i) & 1));
 }
 
 void print_tensor(Tensor* t) {
@@ -81,20 +47,6 @@ static inline Tensor* contract(
     (uint64_t)(t1->size) * t2->size / (cds * cds),
     t1->origin | t2->origin
   );
-}
-
-uint64_t init_bin_comb(int k) {
-  return (1 << k) - 1;
-}
-
-uint64_t next_bin_comb(int64_t comb, int n) {
-  uint64_t x = comb & -comb;
-  uint64_t y = comb + x;
-  uint64_t z = (comb & ~y);
-  comb = z / x;
-  comb >>= 1;
-  comb |= y;
-  return (comb < 1<<n) ? comb : 0;
 }
 
 static inline GHashTable* mk_hash_table() {
@@ -161,15 +113,4 @@ uint64_t ord(int* tensors_sizes, int** contracted_dims_sizes, int tensor_cnt) {
   for(int i=0; i<tensor_cnt; i++)
     g_hash_table_destroy(best_contr_results[i]);
   return total_cost;
-}
-
-int main() {
-  int tensors_sizes[] = {12, 20, 30};
-  int* contracted_dims_sizes[3];
-  contracted_dims_sizes[0] = (int[]){0, 4, 3};
-  contracted_dims_sizes[1] = (int[]){4, 0, 5};
-  contracted_dims_sizes[2] = (int[]){3, 5, 0};
-  uint64_t res = ord(tensors_sizes, contracted_dims_sizes, 3);
-  printf("%lld\n", res);
-  return 0;
 }

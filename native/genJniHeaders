@@ -1,0 +1,4 @@
+SCALA_LIB_HOME=/usr/local/Cellar/scala/2.12.1/libexec/lib/
+SCALA_CP=$SCALA_LIB_HOME/scala-library.jar:$SCALA_LIB_HOME/scala-reflect.jar
+javah -cp $SCALA_CP:../../target/scala-2.12/classes/ \
+  -o src/jni/BFS_contraction_order.h BFSContractionOrder$
