@@ -1,16 +1,22 @@
 #include<stdint.h>
 
-#include "jni/BFS_contraction_order.h"
+#include "jni/BFSContractionOrder__.h"
 
 #include "BFS_contraction_order/ord.h"
 
-JNIEXPORT jlong JNICALL Java_BFSContractionOrder_00024_ord
-  (JNIEnv * env, jobject obj, jintArray _tensors_sizes, jobjectArray _contracted_dims_sizes) {
-    int tensors_sizes[] = {12, 20, 30};
-    int* contracted_dims_sizes[3];
-    contracted_dims_sizes[0] = (int[]){0, 4, 3};
-    contracted_dims_sizes[1] = (int[]){4, 0, 5};
-    contracted_dims_sizes[2] = (int[]){3, 5, 0};
-    uint64_t res = ord(tensors_sizes, contracted_dims_sizes, 3);
-    return (int)res;
+JNIEXPORT jlong JNICALL Java_BFSContractionOrder_00024_ord(
+  JNIEnv* env, jobject obj, jintArray j_tensors_sizes,
+  jobjectArray j_contracted_dims_sizes
+) {
+    int tensor_cnt = (*env)->GetArrayLength(env, j_tensors_sizes);
+    int* tensors_sizes = (int*)(*env)->GetIntArrayElements(env, j_tensors_sizes, 0);
+    int** contracted_dims_sizes = malloc(tensor_cnt*sizeof(int*));
+    for(int i=0; i < tensor_cnt; i++) {
+      jintArray a =
+        (jintArray)(*env)->GetObjectArrayElement(env, j_contracted_dims_sizes, i);
+      contracted_dims_sizes[i] = (int*)(*env)->GetIntArrayElements(env, a, 0);
+    }
+    uint64_t res = ord(tensors_sizes, contracted_dims_sizes, tensor_cnt);
+    // TODO release arrays
+    return (long long)res;
   }

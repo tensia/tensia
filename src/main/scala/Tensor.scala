@@ -154,3 +154,7 @@ case class Dimensions(sizes:IndexedSeq[Int]) {
   def makeTensor(maker:Seq[Int] => Int):Tensor = Tensor(all map maker toIndexedSeq, this)
 
 }
+
+object Dimensions {
+  def of(sizes:Int*) = Dimensions(sizes.toIndexedSeq)
+}

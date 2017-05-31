@@ -2,4 +2,4 @@
 /target
 *.iml
 /project/target
-/native/build/*
+/project/project/target
