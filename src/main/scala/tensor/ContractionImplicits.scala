@@ -1,8 +1,10 @@
+package tensor
+
 /**
   * Created by mathek on 03/04/2017.
   */
 
-object TensorContractionImplicits {
+object ContractionImplicits {
   implicit def tensorToContractableTensor(tensor: Tensor):ContractableTensor = ContractableTensor(tensor)
 }
 

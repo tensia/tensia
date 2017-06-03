@@ -1,5 +1,6 @@
 import org.scalatest._
-import TensorContractionImplicits._
+import tensor._
+import tensor.ContractionImplicits._
 
 /**
   * Created by mathek on 03/04/2017.

@@ -2,6 +2,12 @@
 #include<stdio.h>
 
 /**
+@return Hamming distance between `n` and 0 (equals number of ones in binary
+representation of `n`)
+*/
+int hamming0(uint64_t n);
+
+/**
 @return position of the least significant one in binary representation of
 a number
 */

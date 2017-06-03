@@ -1,5 +1,5 @@
 java_incl = $(shell /usr/libexec/java_home)/include
-lib_name = BFS_contraction_order
+lib_name = contraction_order_BFSAlg
 deps = src/helpers/bitmask.c src/$(lib_name)/ord.c
 out = ../target/native/
 default:

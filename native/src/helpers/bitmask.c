@@ -1,5 +1,13 @@
 #include "bitmask.h"
 
+//hamming0
+
+int hamming0(uint64_t n) {
+  int cnt;
+  for(cnt=0; n > 0; n&=n-1, cnt++);
+  return cnt;
+}
+
 //de_brujin
 
 const int de_brujin_array[64] =
