@@ -1,4 +1,4 @@
-package tensor
+package tensia.tensor
 
 /**
   * Created by mathek on 31/03/2017.

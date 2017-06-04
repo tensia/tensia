@@ -15,10 +15,10 @@ static inline Tensor* mk_tensor(
   return t;
 }
 
-void print_tensor(Tensor* t) {
-  printf("cost: %lld,\tsize: %d,\torigin:\t", t->total_cost, t->size);
-  printbits(t->origin, 3);
-  printf("\n");
+void debug_tensor(Tensor* t, int tensor_cnt) {
+  debug("cost: %lld,\tsize: %d,\torigin:\t", t->total_cost, t->size);
+  debug_bits(t->origin, tensor_cnt);
+  debug("\n");
 }
 
 static inline uint64_t contracted_dims_size(
@@ -40,7 +40,7 @@ static inline Tensor* contract(
   uint64_t cds = contracted_dims_size(
     t1->origin, t2->origin, contracted_dims_sizes
   );
-  // printf("cds: %lld\n", cds);
+  // debug("cds: %lld\n", cds);
   return mk_tensor(
     max(t1->total_cost, t2->total_cost) + (uint64_t)(t1->size) * t2->size / cds,
     (uint64_t)(t1->size) * t2->size / (cds * cds),
@@ -70,17 +70,13 @@ static inline Tensor* get_contr_results(
 void store_order_r(
   int* order, int* i, Tensor* t, GHashTable** best_contr_results, int tensor_cnt
 ) {
-  printbits(t->origin, 3);
-  printf("\n");
   if(hamming0(t->origin) == 1)
     order[(*i)++] = de_brujin(t->origin);
   else {
     int idx = *i;
     (*i)++;
-    printf("%d %d\n", idx, *i);
     Tensor* l = get_contr_results(best_contr_results, t->left);
     store_order_r(order, i, l, best_contr_results, tensor_cnt);
-    printf("%d\n", *i);
     order[idx] = *i + tensor_cnt;
     Tensor* r = get_contr_results(best_contr_results, t->origin&~t->left);
     store_order_r(order, i, r, best_contr_results, tensor_cnt);
@@ -106,38 +102,34 @@ uint64_t ord(
     GHashTable* stage_content = best_contr_results[stage-1] = mk_hash_table();
     for(int st1=1; st1<=(stage+1)/2; st1++) {
       int st2 = stage - st1;
-      printf("s: %d %d %d\n", stage, st1, st2);
+      debug("s: %d %d %d\n", stage, st1, st2);
       GHashTableIter st1_i;
       g_hash_table_iter_init(&st1_i, best_contr_results[st1-1]);
       Tensor *t1;
       while(g_hash_table_iter_next(&st1_i, NULL, (gpointer*)&t1)){
-        printf("t1: ");
-        print_tensor(t1);
+        debug("t1: ");
+        debug_tensor(t1, tensor_cnt);
         for(
           uint64_t comb = init_bin_comb(st2);
           comb;
           comb=next_bin_comb(comb, tensor_cnt-st1)
         ) {
-          printbits(comb, 10);
-          printf("\n");
           uint64_t scaled_comb=comb;
           for(uint64_t o1=t1->origin; o1 > 0; o1&=(o1-1)) {
             uint64_t b = o1&(-o1);
             scaled_comb = ((scaled_comb&~(b-1))<<1)|(scaled_comb&(b-1));
           }
-          printbits(scaled_comb, 10);
-          printf("\n");
           Tensor* t2 = (Tensor*)g_hash_table_lookup(
             best_contr_results[st2-1], (gconstpointer)&scaled_comb
           );
-          printf("t2: ");
-          print_tensor(t2);
+          debug("t2: ");
+          debug_tensor(t2, tensor_cnt);
           Tensor* c = contract(t1, t2, contracted_dims_sizes);
-          printf("c: ");
-          print_tensor(c);
+          debug("c: ");
+          debug_tensor(c, tensor_cnt);
           reflect(stage_content, c);
         }
-        printf("\n");
+        debug("\n");
       }
     }
   }

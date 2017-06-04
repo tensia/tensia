@@ -1,5 +1,6 @@
 #include<stdint.h>
 #include<stdio.h>
+#include"common.h"
 
 /**
 @return Hamming distance between `n` and 0 (equals number of ones in binary
@@ -34,7 +35,7 @@ that position is assigned to
 /**
 Prints `size` least significant bits of binary representation of a number
 */
-void printbits(uint64_t v, char size);
+void debug_bits(uint64_t v, char size);
 
 /**
 @return bitmask of first `k`-element combination of set (of size in [k, 64]);

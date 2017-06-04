@@ -1,4 +1,4 @@
-package tensor
+package tensia.tensor
 
 import scala.collection.SeqView
 
@@ -70,7 +70,7 @@ case class Dimensions(sizes:IndexedSeq[Int]) {
 
   /**
     * Creates [[Tensor]] of content being result of applying mapper to each value of indices
-    * @param maker  function mapping indices to value of tensor at these indices
+    * @param maker  function mapping indices to value of tensia.tensor at these indices
     * @return [[Tensor]] of content produced as written above, and [[Dimensions]] of this
     */
   def makeTensorView(maker:Seq[Int] => Int):Tensor = Tensor(all map maker, this)

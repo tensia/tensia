@@ -28,8 +28,8 @@ int de_brujin(uint64_t n) {
 
 //printbits
 
-void printbits(uint64_t v, char size) {
-  for(int i = size-1; i >= 0; i--) putchar('0' + ((v >> i) & 1));
+void debug_bits(uint64_t v, char size) {
+  for(int i = size-1; i >= 0; i--) debug("%c", (char)('0' + ((v >> i) & 1)));
 }
 
 //combinations
