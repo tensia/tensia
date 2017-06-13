@@ -12,16 +12,12 @@ object BFSAlg extends Alg{
   @native def ord(dimensionsSizes:Array[Int], contractedDimsSizes:Array[Array[Int]]):NativeContractionOrderResult =
     throw new Error("jni fail")
 
-  override def findContractionOrder(tensors:Seq[Tensor], contractedDims: Seq[ContractedDims]) = {
-    val dimensions = tensors map (_.dimensions) toIndexedSeq
-    val dimsSizes = dimensions map (_.totalSize) toArray
-    val contractedDimsSizes = contractedDims.foldLeft(Array.fill(dimensions.length, dimensions.length)(1)) {
-      case (acc, ContractedDims((d1, d2), cdims)) =>
-        val cdimsSize = (cdims map {case (i1, i2) => i1} map dimensions(d1).sizes).product
-        acc(d1)(d2) = cdimsSize
-        acc(d2)(d1) = cdimsSize
-        acc
-    }
+  override def findContractionOrder(tensors:Seq[Tensor], contractedDims: Map[(Tensor, Tensor), Seq[Int]]) = {
+    val dimsSizes = tensors map (_.dimensions.totalSize) toArray
+    val contractedDimsSizes: Array[Array[Int]] = Array.fill(tensors.length, tensors.length)(1)
+    for ((t1, i) <- tensors.zipWithIndex; (t2, j) <- tensors.zipWithIndex)
+      contractedDimsSizes(i)(j) = contractedDims getOrElse ((t1, t2), Seq()) map t1.dimensions.sizes product
+
     ord(dimsSizes, contractedDimsSizes) toContractionTree tensors.toIndexedSeq
   }
 }
