@@ -1,6 +1,6 @@
-package tensia
+package pl.edu.agh.tensia
 
-import tensia.tensor.Tensor
+import pl.edu.agh.tensia.tensor.Tensor
 
 /**
   * Created by mathek on 04/06/2017.

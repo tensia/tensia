@@ -1,6 +1,6 @@
-package tensia.contraction_order
+package pl.edu.agh.tensia.contraction_order
 
-import tensia.tensor.Tensor
+import pl.edu.agh.tensia.tensor.Tensor
 
 /**
   * Created by mathek on 03/06/2017.

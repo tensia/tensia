@@ -1,4 +1,4 @@
-package tensia.tensor
+package pl.edu.agh.tensia.tensor
 
 import scala.collection.SeqView
 

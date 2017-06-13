@@ -1,4 +1,4 @@
-package tensia.tensor
+package pl.edu.agh.tensia.tensor
 
 /**
   * Created by mathek on 31/03/2017.

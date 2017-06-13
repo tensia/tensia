@@ -1,8 +1,8 @@
-package tensia.contraction_order
+package pl.edu.agh.tensia.contraction_order
 
 import org.scalatest._
-import tensia.tensor._
-import tensia.helpers._
+import pl.edu.agh.tensia.tensor._
+import pl.edu.agh.tensia.helpers._
 
 /**
   * Created by mathek on 03/04/2017.
