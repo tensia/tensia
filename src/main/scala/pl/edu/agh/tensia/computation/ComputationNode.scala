@@ -25,7 +25,9 @@ class ComputationNode[T](tree: Tree[T]) extends Actor with Stash with ActorLoggi
       })
     case Leaf(provider) =>
       val res = Future {
-        Result[T](provider.get)
+        val res = Result[T](provider.get)
+        println(res)
+        res
       }
       res pipeTo context.parent
       context stop self
@@ -42,10 +44,18 @@ class ComputationNode[T](tree: Tree[T]) extends Actor with Stash with ActorLoggi
 
 
       if (childrenRes.forall(_._2.nonEmpty)) {
+        println(res)
         val node = tree.asInstanceOf[Node[T]]
         val List(lv, rv) = childrenRes.map(_._2.get)
+        //todo improve error handling
         val nodeValue = Future {
-          Result(node.op(lv, rv))
+          try {
+            val res = Result(node.op(lv, rv))
+            println(res)
+            res
+          }catch {
+            case e => e.printStackTrace()
+          }
         }
         nodeValue pipeTo context.parent
         context stop self
