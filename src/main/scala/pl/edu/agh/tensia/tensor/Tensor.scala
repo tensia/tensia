@@ -1,6 +1,7 @@
 package pl.edu.agh.tensia.tensor
 
 import scala.collection.SeqView
+import scala.util.Random
 
 /**
   * Created by mathek on 03/06/2017.
@@ -77,4 +78,5 @@ object Tensor {
     Tensor(content, Dimensions(dims.to[IndexedSeq]))
   }
   def zero(dimensions:Int*) = Dimensions(dimensions toIndexedSeq) makeTensorView (_ => 0)
+  def rand(dimensions:Int*) = Dimensions(dimensions toIndexedSeq) makeTensor (_ => Random nextInt 10)
 }

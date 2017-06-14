@@ -54,7 +54,7 @@ class ComputationNode[T](tree: Tree[T]) extends Actor with Stash with ActorLoggi
             println(res)
             res
           }catch {
-            case e => e.printStackTrace()
+            case e:Error => e.printStackTrace()
           }
         }
         nodeValue pipeTo context.parent
