@@ -10,11 +10,9 @@ import pl.edu.agh.tensia.contraction_order.{BFSAlg, ContractedDims}
 
 object Main extends App {
   val t = Seq(Tensor.rand(3, 4), Tensor.rand(4, 5), Tensor.rand(2, 3, 5))
-  val contTree = BFSAlg.findContractionOrder(
-    t,
-    mkContractedDims((t(0), t(1)) -> Seq((1, 0)), (t(0), t(2)) -> Seq((0, 1)), (t(1), t(2)) -> Seq((1, 2)))
-  )
-  val compTree = contTree.toCompTree
+  val contractedDims = mkContractedDims((t(0), t(1)) -> Seq((1, 0)), (t(0), t(2)) -> Seq((0, 1)), (t(1), t(2)) -> Seq((1, 2)))
+  val contTree = BFSAlg.findContractionOrder(t, contractedDims)
+  val compTree = contTree toCompTree contractedDims
   val system = ActorSystem("system")
 
   system.actorOf(Props(new ComputationNode(compTree)))
