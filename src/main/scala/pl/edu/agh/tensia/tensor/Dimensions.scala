@@ -5,35 +5,30 @@ import scala.collection.SeqView
 /**
   * Created by mathek on 03/06/2017.
   */
-case class Dimensions(sizes:IndexedSeq[Int]) {
+case class Dimensions(dimensions:IndexedSeq[Dimension]) {
 
-  lazy val length = sizes.length
+  lazy val length:Int = dimensions.length
 
-  lazy val totalSize = sizes.product
+  lazy val sizes:IndexedSeq[Int] = dimensions map (_.size)
 
-  def contract(dims:Seq[(Int, Int)], other:Dimensions) = remove(dims.map(_._1).toSet) ++ (other remove dims.map(_._2).toSet)
-
-  def remove(dims:Set[Int]) = Dimensions(sizes.zipWithIndex.view.filterNot{case (_, i) => dims contains i}.map(_._1).toIndexedSeq)
-
-  /**
-    * @param dims   contracted dimensions of this
-    * @param other  other [[Dimensions]]
-    * @return       cost of contranction of this-dimensioned and other-dimensioned [[Tensor]]s
-    */
-  def contractionCost(dims:Seq[Int], other:Dimensions) = totalSize / (dims map sizes product) * other.totalSize
+  lazy val totalSize:Int = sizes.product
 
   /**
     * Reorders dimensions according to order
     * @param order seq which index corresponds to current dimension no, and value to its new number
     * @return reordered [[Dimensions]]
     */
-  def reorder(order: Seq[Int]) = {
+  def reorder(order: Seq[Int]):Dimensions = {
     if (order.distinct != order || !order.forall(0 until length contains _)) {
       throw InvalidTensorReDimOrderError(order)
     }
-    Dimensions(order map sizes toIndexedSeq)
+    Dimensions(order map dimensions toIndexedSeq)
   }
 
+  /**
+    * @param indices  sequence of indices in this [[Dimensions]]
+    * @return index in [[Tensor]] contents array
+    */
   def indexOf(indices:Seq[Int]):Int =
     (indices zip sizes).foldRight (1, 0) {
       case ((idx, size), (prod, acc)) => (prod*size, acc+prod*idx)
@@ -41,6 +36,10 @@ case class Dimensions(sizes:IndexedSeq[Int]) {
       case (prod, res) => res
     }
 
+  /**
+    * @param index  index in [[Tensor]] contents array
+    * @return sequence of indices in this [[Dimensions]]
+    */
   def indicesOf(index:Int):Seq[Int] =
     sizes.foldRight (index, List[Int]()) {
       case (size, (idx, acc)) => (idx/size, idx % size :: acc)
@@ -49,15 +48,20 @@ case class Dimensions(sizes:IndexedSeq[Int]) {
     }
 
   /**
-    * splits dimensions into two parts, according to given length
+    * Splits dimensions into two parts, according to given length
     * @param len  if positive, length of the left split part, otherwise length of the right split part
     * @return 2-element tuple of [[Dimensions]]
     */
-  def split(len:Int):(Dimensions, Dimensions) = sizes splitAt (if (len < 0) this.length + len else len) match {
+  def split(len:Int):(Dimensions, Dimensions) = dimensions splitAt (if (len < 0) this.length + len else len) match {
     case (leftSizes, rightSizes) => (Dimensions(leftSizes), Dimensions(rightSizes))
   }
 
-  def ++(other:Dimensions) = Dimensions(sizes ++ other.sizes)
+  /**
+    * Concats dimensions and `other` dimensions
+    * @param other  dimensions to concat with
+    * @return [[Dimensions]] being result of concatenation
+    */
+  def ++(other:Dimensions):Dimensions = Dimensions(dimensions ++ other.dimensions)
 
   /**
     * @return lazy sequence of all possible indices' values
@@ -79,6 +83,7 @@ case class Dimensions(sizes:IndexedSeq[Int]) {
 }
 
 object Dimensions {
-  def of(sizes:Int*) = Dimensions(sizes.toIndexedSeq)
-}
+  def of(sizes:Dimension*) = Dimensions(sizes.toIndexedSeq)
 
+  implicit def to_dimension_list(d:Dimensions):List[Dimension] = d.dimensions
+}

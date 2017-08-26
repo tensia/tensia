@@ -1,5 +1,7 @@
 package pl.edu.agh.tensia.tensor
 
+import pl.edu.agh.tensia.contraction_order.ContractedDims
+
 import scala.collection.SeqView
 import scala.util.Random
 
@@ -19,13 +21,30 @@ case class Tensor(content: Seq[Int], dimensions: Dimensions) {
     case _ => this
   }
 
+
   /**
-    * Contacts this with another [[Tensor]] by dimensionsCnt rightmost dimensions
-    * @param other  [[Tensor]] to be contacted with this
-    * @param dimensionsCnt  amount of rightmost dimensions that should be contacted
+    * Contracts this with another [[Tensor]] by dimensions passed as dims
+    * @param other  [[Tensor]] to be contracted with this
     * @return [[Tensor]] being result of contracting this and other
     */
-  def contract(other: Tensor, dimensionsCnt: Int) = {
+  def contract(other: Tensor): Tensor = {
+    val contractedDimsSet = dimensions.toSet intersect other.dimensions.toSet
+    val thisDimsNewIndices = contracted_than_remaining_order(contractedDimsSet, this)
+    val otherDimsNewIndices = contracted_than_remaining_order(contractedDimsSet, other)
+    this reDimView thisDimsNewIndices do_contract (
+        other reDimView otherDimsNewIndices,
+        contractedDimsSet.size
+      )
+  }
+
+  private def contracted_than_remaining_order(contractedDimsSet: Set[Dimension], tensor: Tensor) = {
+    val (contractedDimsIndices, remainingDimsIndices) =
+      (0 until tensor.rank) partition { i => contractedDimsSet contains tensor.dimensions(i) }
+    contractedDimsIndices ++ remainingDimsIndices
+
+  }
+
+  private def do_contract(other: Tensor, dimensionsCnt: Int) = {
 
     val (remainingDims, contractedDims) = dimensions split -dimensionsCnt
     val (otherRemainingDims, otherContractedDims) = other.dimensions split -dimensionsCnt
@@ -36,23 +55,6 @@ case class Tensor(content: Seq[Int], dimensions: Dimensions) {
       val (t1indices, t2indices) = remainingIndices splitAt remainingDims.length
       contractedDims.all map { indices => this(t1indices ++ indices) * other(t2indices ++ indices)} sum
     }
-  }
-
-  /**
-    * Contracts this with another [[Tensor]] by dimensions passed as dims
-    * @param other  [[Tensor]] to be contracted with this
-    * @param dims Sequence of pairs of contracted dimension numbers, where first element in pair corresponds to this'
-    *             dimension, and the second to the others dimension
-    * @return [[Tensor]] being result of contracting this and other
-    */
-  def contract(other: Tensor, dims: Seq[(Int, Int)]): Tensor = {
-    val (thisContractedDims, otherContractedDims) = dims.unzip
-    val thisRemainingDims = (0 until rank) filterNot thisContractedDims.toSet.contains
-    val otherRemainingDims = (0 until other.rank) filterNot otherContractedDims.toSet.contains
-    this reDimView thisRemainingDims ++ thisContractedDims contract (
-        other reDimView otherRemainingDims ++ otherContractedDims,
-        thisContractedDims.length
-      )
   }
 
   /**
@@ -74,9 +76,9 @@ case class Tensor(content: Seq[Int], dimensions: Dimensions) {
 }
 
 object Tensor {
-  def apply(content: Seq[Int], dims: Int*):Tensor = {
+  def apply(content: Seq[Int], dims: Dimension*):Tensor = {
     Tensor(content, Dimensions(dims.to[IndexedSeq]))
   }
-  def zero(dimensions:Int*) = Dimensions(dimensions toIndexedSeq) makeTensorView (_ => 0)
-  def rand(dimensions:Int*) = Dimensions(dimensions toIndexedSeq) makeTensor (_ => Random nextInt 10)
+  def zero(dimensions:Dimension*) = Dimensions(dimensions toIndexedSeq) makeTensorView (_ => 0)
+  def rand(dimensions:Dimension*) = Dimensions(dimensions toIndexedSeq) makeTensor (_ => Random nextInt 10)
 }

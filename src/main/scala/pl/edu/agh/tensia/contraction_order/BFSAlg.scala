@@ -16,7 +16,7 @@ object BFSAlg extends Alg{
     val dimsSizes = tensors map (_.dimensions.totalSize) toArray
     val contractedDimsSizes: Array[Array[Int]] = Array.fill(tensors.length, tensors.length)(1)
     for ((t1, i) <- tensors.zipWithIndex; (t2, j) <- tensors.zipWithIndex)
-      contractedDimsSizes(i)(j) = contractedDims getOrElse ((t1, t2), Seq()) map t1.dimensions.sizes product
+      contractedDimsSizes(i)(j) = contractedDims getOrElse ((t1, t2), Seq()) map t1.dimensions product
 
     ord(dimsSizes, contractedDimsSizes) toContractionTree tensors.toIndexedSeq
   }
