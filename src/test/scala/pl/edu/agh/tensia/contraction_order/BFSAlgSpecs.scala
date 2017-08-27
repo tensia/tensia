@@ -14,9 +14,7 @@ class BFSAlgSpecs extends FunSpec with Matchers {
       val d = Seq(Dimension(2), Dimension(3), Dimension(4), Dimension(5))
       val tensors = Seq(Tensor.zero(d(1), d(2)), Tensor.zero(d(2), d(3)), Tensor.zero(d(0), d(1), d(3)))
       val Seq(t0, t1, t2) = tensors
-      val contractedDims =
-        mkContractedDims((t0, t1) -> Seq((1, 0)), (t0, t2) -> Seq((0, 1)), (t1, t2) -> Seq((1, 2)))
-      BFSAlg.findContractionOrder(tensors, contractedDims) shouldEqual TreeNode(t2, TreeNode(t0, t1))
+      BFSAlg findContractionOrder tensors shouldEqual TreeNode(t2, TreeNode(t0, t1))
     }
 
     it("should order contractions properly v2") {
@@ -28,14 +26,11 @@ class BFSAlgSpecs extends FunSpec with Matchers {
         Tensor.zero(d('d03_b), d('d03_a), 5, 2),
         Tensor.zero(d('d04), d('d14_b), d('d14_a), 4, 5))
       val Seq(t0, t1, t2, t3, t4) = tensors
-      val contractedDims =
-        mkContractedDims((t0, t3) -> Seq((1, 1), (2, 0)), (t0, t4) -> Seq((0, 0)), (t1, t2) -> Seq((0, 1)), (t1, t4) -> Seq((1, 2), (2, 1)),
-          (t2, t4) -> Seq((0, 3)), (t3, t4) -> Seq((2, 4)))
-      BFSAlg.findContractionOrder(tensors, contractedDims) shouldEqual TreeNode(
+      BFSAlg findContractionOrder tensors shouldEqual TreeNode(
         TreeNode(t3, t0),
         TreeNode(
-          TreeNode(t1, t2),
-          t4
+          t4,
+          TreeNode(t1, t2)
         )
       )
     }

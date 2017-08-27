@@ -7,6 +7,8 @@ import scala.collection.SeqView
   */
 case class Dimensions(dimensions:IndexedSeq[Dimension]) {
 
+  if(dimensions != dimensions.distinct) throw DuplicateDimensionsError(this)
+
   lazy val length:Int = dimensions.length
 
   lazy val sizes:IndexedSeq[Int] = dimensions map (_.size)
@@ -37,7 +39,7 @@ case class Dimensions(dimensions:IndexedSeq[Dimension]) {
     }
 
   /**
-    * @return lazy sequence of all possible indices' values
+    * @return view of sequence of all possible indices' values
     */
   def all: SeqView[Seq[Int], Seq[_]] =
   length match {
@@ -51,6 +53,10 @@ case class Dimensions(dimensions:IndexedSeq[Dimension]) {
     * @return [[Tensor]] of content produced as written above, and [[Dimensions]] of this
     */
   def makeTensorView(maker:Seq[Int] => Int):Tensor = Tensor(all map maker, this)
+
+  /**
+    * Eager version of [[Dimensions.makeTensorView(maker)]]
+    */
   def makeTensor(maker:Seq[Int] => Int):Tensor = Tensor(all map maker toIndexedSeq, this)
 
   override def toString: String = s"Dimensions(${dimensions mkString ", "})"

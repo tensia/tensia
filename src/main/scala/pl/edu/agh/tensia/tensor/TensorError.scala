@@ -7,3 +7,4 @@ package pl.edu.agh.tensia.tensor
 trait TensorError extends Error
 case class InvalidTensorDimensionsError(dimensions: Dimensions) extends TensorError
 case class InvalidTensorSizeError(size:Int, dimensionsTotalSize:Int) extends TensorError
+case class DuplicateDimensionsError(dimensions: Dimensions) extends TensorError
