@@ -21,58 +21,40 @@ case class Tensor(content: Seq[Int], dimensions: Dimensions) {
     case _ => this
   }
 
-
   /**
     * Contracts this with another [[Tensor]] by dimensions passed as dims
     * @param other  [[Tensor]] to be contracted with this
     * @return [[Tensor]] being result of contracting this and other
     */
   def contract(other: Tensor): Tensor = {
-    val contractedDimsSet = dimensions.toSet intersect other.dimensions.toSet
-    val thisDimsNewIndices = contracted_than_remaining_order(contractedDimsSet, this)
-    val otherDimsNewIndices = contracted_than_remaining_order(contractedDimsSet, other)
-    this reDimView thisDimsNewIndices do_contract (
-        other reDimView otherDimsNewIndices,
-        contractedDimsSet.size
-      )
-  }
-
-  private def contracted_than_remaining_order(contractedDimsSet: Set[Dimension], tensor: Tensor) = {
-    val (contractedDimsIndices, remainingDimsIndices) =
-      (0 until tensor.rank) partition { i => contractedDimsSet contains tensor.dimensions(i) }
-    contractedDimsIndices ++ remainingDimsIndices
-
-  }
-
-  private def do_contract(other: Tensor, dimensionsCnt: Int) = {
-
-    val (remainingDims, contractedDims) = dimensions split -dimensionsCnt
-    val (otherRemainingDims, otherContractedDims) = other.dimensions split -dimensionsCnt
-
-    if (contractedDims != otherContractedDims) throw InvalidContractionArgumentError(contractedDims, otherContractedDims)
-
-    (remainingDims ++ otherRemainingDims) makeTensor {remainingIndices =>
-      val (t1indices, t2indices) = remainingIndices splitAt remainingDims.length
-      contractedDims.all map { indices => this(t1indices ++ indices) * other(t2indices ++ indices)} sum
-    }
+    val contractedDims:Dimensions = dimensions intersect other.dimensions
+    val thisNewDims:Dimensions = dimensions diff other.dimensions
+    val otherNewDims:Dimensions = other.dimensions diff dimensions
+    Tensor do_contract(this, other, contractedDims, thisNewDims, otherNewDims)
   }
 
   /**
-    * Shuffles dimensions according to given ordering
-    * @param order seq which index corresponds to current dimension no, and value to its new number
+    * Alias for [[Tensor.contract(other)]]
+    */
+  def ~(other: Tensor):Tensor = contract(other)
+
+  /**
+    * Changes dimensions order according to the new dimensions
+    * @param newDimensions  dimensions to be set on [[Tensor]], must consist of the same [[Dimension]]s in any order
     * @return [[Tensor]] being view of this with shuffled dimensions
     */
-  def reDimView(order:Seq[Int]): Tensor = {
-    val invOrder = order.zipWithIndex sortBy {case (v, i) => v} map {case (v, i) => i}
-    dimensions reorder order makeTensorView { indices => this(invOrder map indices)}
+  def reDimView(newDimensions: Dimensions): Tensor = {
+    if (newDimensions diff dimensions nonEmpty) throw InvalidTensorDimensionsError(newDimensions)
+    val order = newDimensions map dimensions.indexOf
+    newDimensions makeTensorView { indices => this(order map indices)}
   }
 
   /**
     * Works as [[Tensor.reDimView]], but computes new [[Tensor]] eagerly
     */
-  def reDim(ordering:Seq[Int]) = reDimView(ordering).force
+  def reDim(newDimensions: Dimensions) = reDimView(newDimensions).force
 
-  def apply(indices:Seq[Int]) = content(dimensions indexOf indices)
+  def apply(indices:Seq[Int]) = content(dimensions tensorIndexOf indices)
 }
 
 object Tensor {
@@ -81,4 +63,16 @@ object Tensor {
   }
   def zero(dimensions:Dimension*) = Dimensions(dimensions toIndexedSeq) makeTensorView (_ => 0)
   def rand(dimensions:Dimension*) = Dimensions(dimensions toIndexedSeq) makeTensor (_ => Random nextInt 10)
+
+  private def do_contract(t1: Tensor, t2:Tensor, contractedDims: Dimensions, t1remainingDims:Dimensions, t2remainingDims:Dimensions) = {
+    val t1redimmed = t1.reDimView(contractedDims ++ t1remainingDims)
+    val t2redimmed = t2.reDimView(contractedDims ++ t2remainingDims)
+
+    val remainingDims:Dimensions = t1remainingDims ++ t2remainingDims
+
+    remainingDims makeTensor {remainingIndices =>
+      val (t1indices, t2indices) = remainingIndices splitAt t1remainingDims.length
+      contractedDims.all map { indices => t1(t1indices ++ indices) * t2(t2indices ++ indices)} sum
+    }
+  }
 }
