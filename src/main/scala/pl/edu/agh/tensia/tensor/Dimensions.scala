@@ -47,18 +47,6 @@ case class Dimensions(dimensions:IndexedSeq[Dimension]) {
     case _ => (0 until totalSize).view map indicesOf
   }
 
-  /**
-    * Creates [[Tensor]] of content being result of applying mapper to each value of indices
-    * @param maker  function mapping indices to value of pl.edu.agh.tensia.tensor at these indices
-    * @return [[Tensor]] of content produced as written above, and [[Dimensions]] of this
-    */
-  def makeTensorView(maker:Seq[Int] => Int):Tensor = Tensor(all map maker, this)
-
-  /**
-    * Eager version of [[Dimensions.makeTensorView(maker)]]
-    */
-  def makeTensor(maker:Seq[Int] => Int):Tensor = Tensor(all map maker toIndexedSeq, this)
-
   override def toString: String = s"Dimensions(${dimensions mkString ", "})"
 
 }

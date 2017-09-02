@@ -10,8 +10,8 @@ case class OrderFinderResult(cost:Long, order:Array[Int]) {
 
   override def toString: String = s"OrderFinderResult($cost, Array(${order mkString ", "}))"
 
-  def toContractionTree(tensors:IndexedSeq[Tensor]) = {
-    def mkContractionTree(ind:Int):Tree =
+  def toContractionTree[T](tensors:IndexedSeq[Tensor[T]]) = {
+    def mkContractionTree(ind:Int):Tree[T] =
       if (order(ind) < tensors.size) TreeLeaf(tensors(order(ind)))
       else TreeNode(mkContractionTree(ind + 1), mkContractionTree(order(ind) - tensors.size))
     mkContractionTree(0)

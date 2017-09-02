@@ -5,18 +5,18 @@ import org.scalatest._
 /**
   * Created by mathek on 03/04/2017.
   */
-class TensorSpecs extends FunSpec with Matchers {
+class ScalaTensorSpecs extends FunSpec with Matchers {
 
-  describe("Tensor") {
+  describe("ScalaTensor") {
 
     describe("new") {
       it("should create new tensor") {
-        Tensor(Vector(1, 2, 3, 4, 5, 6), 2, 3)
+        ScalaTensor(Vector(1, 2, 3, 4, 5, 6), 2, 3)
       }
       describe("if content size does not match product of dimensions") {
         it("should throw error") {
           assertThrows[InvalidTensorSizeError] {
-            Tensor(Vector(1, 2, 3, 4), 2, 4)
+            ScalaTensor(Vector(1, 2, 3, 4), 2, 4)
           }
         }
       }
@@ -24,9 +24,9 @@ class TensorSpecs extends FunSpec with Matchers {
 
     describe("apply") {
       it("should return value of tensor at specified indices") {
-        Tensor(Vector(5))(Seq()) shouldEqual 5
-        Tensor(Vector(5), 1)(Seq(0)) shouldEqual 5
-        Tensor(Vector(1, 2, 3, 4, 5, 6, 7, 8), 2, 4)(Seq(1, 2)) shouldEqual 7
+        ScalaTensor(Vector(5))(Seq()) shouldEqual 5
+        ScalaTensor(Vector(5), 1)(Seq(0)) shouldEqual 5
+        ScalaTensor(Vector(1, 2, 3, 4, 5, 6, 7, 8), 2, 4)(Seq(1, 2)) shouldEqual 7
       }
     }
 
@@ -34,15 +34,15 @@ class TensorSpecs extends FunSpec with Matchers {
         it("should return contracted tensor v1") {
           val d1:Dimension = 2
           val d2:Dimension = 2
-          Tensor(Vector(3, 4), d1) ~ Tensor(Vector(1, 2, 5, 7), d2, d1) shouldEqual Tensor(Vector(11, 43), d2)
-          Tensor(Vector(3, 4, 5, 6), d1, d2) ~ Tensor(Vector(1, 2, 5, 7), d1, d2) shouldEqual Tensor(Vector(78))
+          ScalaTensor(Vector(3, 4), d1) ~ ScalaTensor(Vector(1, 2, 5, 7), d2, d1) shouldEqual ScalaTensor(Vector(11, 43), d2)
+          ScalaTensor(Vector(3, 4, 5, 6), d1, d2) ~ ScalaTensor(Vector(1, 2, 5, 7), d1, d2) shouldEqual ScalaTensor(Vector(78))
         }
 
       it("should return contracted tensor v2") {
         val d1:Dimension = 2
         val d2:Dimension = 3
         val d3:Dimension = 2
-        Tensor(Vector(3, 4, 5, 6, 7, 8), d1, d2) ~ Tensor(Vector(1, 2, 5, 7, 2, 1), d2, d3) shouldEqual Tensor(Vector(33, 39, 57, 69), d1, d3)
+        ScalaTensor(Vector(3, 4, 5, 6, 7, 8), d1, d2) ~ ScalaTensor(Vector(1, 2, 5, 7, 2, 1), d2, d3) shouldEqual ScalaTensor(Vector(33, 39, 57, 69), d1, d3)
       }
     }
 
@@ -50,32 +50,32 @@ class TensorSpecs extends FunSpec with Matchers {
       it("should create the same tensor if given the same dimensions") {
         val d1 = Dimension(3)
         val d2 = Dimension(2)
-        val t = Tensor(Vector(1, 2, 3, 4, 5, 6), d1, d2)
+        val t = ScalaTensor(Vector(1, 2, 3, 4, 5, 6), d1, d2)
         t reDim Dimensions.of(d1, d2) shouldEqual t
       }
 
-      it("should create Tensor with reordered dimensions v1") {
+      it("should create ScalaTensor with reordered dimensions v1") {
         val d1 = Dimension(3)
         val d2 = Dimension(2)
-        Tensor(Vector(1, 2, 5, 7, 7, 6), d1, d2) reDim Dimensions.of(d2, d1) shouldEqual
-          Tensor(Vector(1, 5, 7, 2, 7, 6), d2, d1)
+        ScalaTensor(Vector(1, 2, 5, 7, 7, 6), d1, d2) reDim Dimensions.of(d2, d1) shouldEqual
+          ScalaTensor(Vector(1, 5, 7, 2, 7, 6), d2, d1)
       }
 
-      it("should create Tensor with reordered dimensions v2") {
+      it("should create ScalaTensor with reordered dimensions v2") {
         val d1 = Dimension(2)
         val d2 = Dimension(2)
         val d3 = Dimension(3)
-        Tensor(Vector(1, 2, 5, 7, 7, 6, 4, 2, 1, 9, 8, 0), d1, d2, d3) reDim Dimensions.of(d2, d3, d1) shouldEqual
-          Tensor(Vector(1, 4, 2, 2, 5, 1, 7, 9, 7, 8, 6, 0), d2, d3, d1)
+        ScalaTensor(Vector(1, 2, 5, 7, 7, 6, 4, 2, 1, 9, 8, 0), d1, d2, d3) reDim Dimensions.of(d2, d3, d1) shouldEqual
+          ScalaTensor(Vector(1, 4, 2, 2, 5, 1, 7, 9, 7, 8, 6, 0), d2, d3, d1)
       }
       describe("if order is invalid") {
         it("should throw error") {
           assertThrows[InvalidTensorDimensionsError] {
             val d = Dimension(3)
-            Tensor(Vector(1, 2, 5, 7, 7, 6), d, 2) reDim Dimensions.of(1, d)
+            ScalaTensor(Vector(1, 2, 5, 7, 7, 6), d, 2) reDim Dimensions.of(1, d)
           }
           assertThrows[InvalidTensorDimensionsError] {
-            Tensor(Vector(1, 2, 5, 7, 7, 6), 3, 2) reDim Dimensions.of(2, 3)
+            ScalaTensor(Vector(1, 2, 5, 7, 7, 6), 3, 2) reDim Dimensions.of(2, 3)
           }
         }
 
