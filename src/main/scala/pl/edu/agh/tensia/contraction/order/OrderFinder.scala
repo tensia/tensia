@@ -1,5 +1,6 @@
 package pl.edu.agh.tensia.contraction.order
 
+import pl.edu.agh.tensia.contraction.order.tree.Tree
 import pl.edu.agh.tensia.tensor.Tensor
 
 /**

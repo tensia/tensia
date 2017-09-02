@@ -2,7 +2,7 @@ package pl.edu.agh.tensia.computation
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, Stash}
 import akka.pattern.pipe
-import pl.edu.agh.tensia.computation.comptree._
+import pl.edu.agh.tensia.computation.tree._
 
 import scala.concurrent.Future
 

@@ -1,6 +1,6 @@
 package pl.edu.agh.tensia.contraction.order.native
 
-import pl.edu.agh.tensia.contraction.order.{Tree, TreeLeaf, TreeNode}
+import pl.edu.agh.tensia.contraction.order.tree._
 import pl.edu.agh.tensia.tensor.Tensor
 
 /**
@@ -12,8 +12,8 @@ case class OrderFinderResult(cost:Long, order:Array[Int]) {
 
   def toContractionTree[T](tensors:IndexedSeq[Tensor[T]]) = {
     def mkContractionTree(ind:Int):Tree[T] =
-      if (order(ind) < tensors.size) TreeLeaf(tensors(order(ind)))
-      else TreeNode(mkContractionTree(ind + 1), mkContractionTree(order(ind) - tensors.size))
+      if (order(ind) < tensors.size) Leaf(tensors(order(ind)))
+      else Node(mkContractionTree(ind + 1), mkContractionTree(order(ind) - tensors.size))
     mkContractionTree(0)
   }
 }

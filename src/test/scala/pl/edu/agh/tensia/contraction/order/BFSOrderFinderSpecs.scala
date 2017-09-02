@@ -1,6 +1,7 @@
 package pl.edu.agh.tensia.contraction.order
 
 import org.scalatest._
+import pl.edu.agh.tensia.contraction.order.tree.Node
 import pl.edu.agh.tensia.tensor._
 
 /**
@@ -13,7 +14,7 @@ class BFSOrderFinderSpecs extends FunSpec with Matchers {
       val d = Seq(Dimension(2), Dimension(3), Dimension(4), Dimension(5))
       val tensors = Seq(ScalaTensor.zero(d(1), d(2)), ScalaTensor.zero(d(2), d(3)), ScalaTensor.zero(d(0), d(1), d(3)))
       val Seq(t0, t1, t2) = tensors
-      BFSOrderFinder findContractionOrder tensors shouldEqual TreeNode(t2, TreeNode(t0, t1))
+      BFSOrderFinder findContractionOrder tensors shouldEqual Node(t2, Node(t0, t1))
     }
 
     it("should order contractions properly v2") {
@@ -25,11 +26,11 @@ class BFSOrderFinderSpecs extends FunSpec with Matchers {
         ScalaTensor.zero(d('d03_b), d('d03_a), 5, 2),
         ScalaTensor.zero(d('d04), d('d14_b), d('d14_a), 4, 5))
       val Seq(t0, t1, t2, t3, t4) = tensors
-      BFSOrderFinder findContractionOrder tensors shouldEqual TreeNode(
-        TreeNode(t3, t0),
-        TreeNode(
+      BFSOrderFinder findContractionOrder tensors shouldEqual Node(
+        Node(t3, t0),
+        Node(
           t4,
-          TreeNode(t1, t2)
+          Node(t1, t2)
         )
       )
     }
