@@ -1,15 +1,16 @@
-package pl.edu.agh.tensia.contraction_order
+package pl.edu.agh.tensia.contraction.order
 
-import pl.edu.agh.tensia.tensor._
+import pl.edu.agh.tensia.contraction.order.native.OrderFinderResult
 import pl.edu.agh.tensia.helpers.loadLib
+import pl.edu.agh.tensia.tensor._
 
 /**
   * Created by mathek on 03/06/2017.
   */
 
-object BFSAlg extends Alg{
-  loadLib("contraction_order_BFSAlg")
-  @native def ord(dimensionsSizes:Array[Int], contractedDimsSizes:Array[Array[Int]]):NativeContractionOrderResult =
+object BFSOrderFinder extends OrderFinder{
+  loadLib("contraction_order_finder_BFS")
+  @native def ord(dimensionsSizes:Array[Int], contractedDimsSizes:Array[Array[Int]]):OrderFinderResult =
     throw new Error("jni fail")
 
   override def findContractionOrder(tensors:Seq[Tensor]) = {

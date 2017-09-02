@@ -1,6 +1,5 @@
 package pl.edu.agh.tensia.tensor
 
-import pl.edu.agh.tensia.contraction_order.ContractedDims
 
 import scala.collection.SeqView
 import scala.util.Random

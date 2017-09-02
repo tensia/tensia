@@ -1,10 +1,10 @@
-package pl.edu.agh.tensia
+package pl.edu.agh.tensia.contraction
 
 import pl.edu.agh.tensia.tensor.Tensor
 
 /**
   * Created by mathek on 04/06/2017.
   */
-package object contraction_order {
+package object order {
   implicit def tensorToTreeLeaf(tensor: Tensor):TreeLeaf = TreeLeaf(tensor)
 }

@@ -1,4 +1,4 @@
-package pl.edu.agh.tensia.contraction_order
+package pl.edu.agh.tensia.contraction.order
 
 import pl.edu.agh.tensia.computation.comptree
 import pl.edu.agh.tensia.tensor.Tensor
