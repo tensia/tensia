@@ -5,15 +5,14 @@
 import akka.actor.{ActorSystem, Props}
 import pl.edu.agh.tensia.computation.ComputationNode
 import pl.edu.agh.tensia.tensor._
-import pl.edu.agh.tensia.helpers._
-import pl.edu.agh.tensia.contraction_order.{BFSAlg, ContractedDims}
+import pl.edu.agh.tensia.contraction_order.BFSAlg
 
 object Main extends App {
-  val t = Seq(Tensor.rand(3, 4), Tensor.rand(4, 5), Tensor.rand(2, 3, 5))
-  val contractedDims = mkContractedDims((t(0), t(1)) -> Seq((1, 0)), (t(0), t(2)) -> Seq((0, 1)), (t(1), t(2)) -> Seq((1, 2)))
-  val contTree = BFSAlg.findContractionOrder(t, contractedDims)
-  val compTree = contTree toCompTree contractedDims
+  val d:Seq[Dimension] = Seq(2, 3, 4, 5)
+  val tensors = Seq(Tensor.rand(d(1), d(2)), Tensor.rand(d(2), d(3)), Tensor.rand(d(0), d(1), d(3)))
+  val contractionTree = BFSAlg findContractionOrder tensors
+  val computationTree = contractionTree toCompTree
   val system = ActorSystem("system")
 
-  system.actorOf(Props(new ComputationNode(compTree)))
+  system.actorOf(Props(new ComputationNode(computationTree)))
 }

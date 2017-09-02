@@ -1,7 +1,6 @@
 package pl.edu.agh.tensia.tensor
 
 import org.scalatest._
-import ContractionImplicits._
 
 /**
   * Created by mathek on 03/04/2017.
@@ -32,38 +31,51 @@ class TensorSpecs extends FunSpec with Matchers {
     }
 
     describe("contract") {
-      describe("by count of dimensions") {
-        it("should return contracted tensor") {
-          Tensor(Vector(3, 4), 2) ~ 1 ~ Tensor(Vector(1, 2, 5, 7), 2, 2) shouldEqual Tensor(Vector(11, 43), 2)
-          Tensor(Vector(3, 4, 5, 6), 2, 2) ~ 2 ~ Tensor(Vector(1, 2, 5, 7), 2, 2) shouldEqual Tensor(Vector(78))
+        it("should return contracted tensor v1") {
+          val d1:Dimension = 2
+          val d2:Dimension = 2
+          Tensor(Vector(3, 4), d1) ~ Tensor(Vector(1, 2, 5, 7), d2, d1) shouldEqual Tensor(Vector(11, 43), d2)
+          Tensor(Vector(3, 4, 5, 6), d1, d2) ~ Tensor(Vector(1, 2, 5, 7), d1, d2) shouldEqual Tensor(Vector(78))
         }
 
-        describe("if contracted dimensions' sizes differ") {
-          it("should throw error") {
-            assertThrows[InvalidContractionArgumentError] {
-              Tensor(Vector(3, 4, 5, 6, 7, 8), 2, 3) ~ 1 ~ Tensor(Vector(1, 2, 5, 7), 2, 2)
-            }
-          }
-        }
-      }
-      describe("by dimensions' pairs") {
-        it("should return contracted tensor") {
-          Tensor(Vector(3, 4, 5, 6, 7, 8), 2, 3) ~ Seq((1, 0)) ~ Tensor(Vector(1, 2, 5, 7, 2, 1), 3, 2) shouldEqual Tensor(Vector(33, 39, 57, 69), 2, 2)
-        }
+      it("should return contracted tensor v2") {
+        val d1:Dimension = 2
+        val d2:Dimension = 3
+        val d3:Dimension = 2
+        Tensor(Vector(3, 4, 5, 6, 7, 8), d1, d2) ~ Tensor(Vector(1, 2, 5, 7, 2, 1), d2, d3) shouldEqual Tensor(Vector(33, 39, 57, 69), d1, d3)
       }
     }
 
     describe("reDim") {
-      it("should create Tensor with reordered dimensions") {
-        Tensor(Vector(1, 2, 5, 7, 7, 6), 3, 2) reDim Seq(1, 0) shouldEqual Tensor(Vector(1, 5, 7, 2, 7, 6), 2, 3)
+      it("should create the same tensor if given the same dimensions") {
+        val d1 = Dimension(3)
+        val d2 = Dimension(2)
+        val t = Tensor(Vector(1, 2, 3, 4, 5, 6), d1, d2)
+        t reDim Dimensions.of(d1, d2) shouldEqual t
+      }
+
+      it("should create Tensor with reordered dimensions v1") {
+        val d1 = Dimension(3)
+        val d2 = Dimension(2)
+        Tensor(Vector(1, 2, 5, 7, 7, 6), d1, d2) reDim Dimensions.of(d2, d1) shouldEqual
+          Tensor(Vector(1, 5, 7, 2, 7, 6), d2, d1)
+      }
+
+      it("should create Tensor with reordered dimensions v2") {
+        val d1 = Dimension(2)
+        val d2 = Dimension(2)
+        val d3 = Dimension(3)
+        Tensor(Vector(1, 2, 5, 7, 7, 6, 4, 2, 1, 9, 8, 0), d1, d2, d3) reDim Dimensions.of(d2, d3, d1) shouldEqual
+          Tensor(Vector(1, 4, 2, 2, 5, 1, 7, 9, 7, 8, 6, 0), d2, d3, d1)
       }
       describe("if order is invalid") {
         it("should throw error") {
-          assertThrows[InvalidTensorReDimOrderError] {
-            Tensor(Vector(1, 2, 5, 7, 7, 6), 3, 2) reDim Seq(1, 1)
+          assertThrows[InvalidTensorDimensionsError] {
+            val d = Dimension(3)
+            Tensor(Vector(1, 2, 5, 7, 7, 6), d, 2) reDim Dimensions.of(1, d)
           }
-          assertThrows[InvalidTensorReDimOrderError] {
-            Tensor(Vector(1, 2, 5, 7, 7, 6), 3, 2) reDim Seq(1, 3)
+          assertThrows[InvalidTensorDimensionsError] {
+            Tensor(Vector(1, 2, 5, 7, 7, 6), 3, 2) reDim Dimensions.of(2, 3)
           }
         }
 
