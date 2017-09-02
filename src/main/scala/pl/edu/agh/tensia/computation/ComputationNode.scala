@@ -13,7 +13,7 @@ object ComputationNode {
   def props[T](tree: Tree[T]): Props = Props(new ComputationNode[T](tree))
 }
 
-class ComputationNode[T](tree: Tree[T]) extends Actor with Stash with ActorLogging {
+case class ComputationNode[T](tree: Tree[T]) extends Actor with Stash with ActorLogging {
   import context.dispatcher
   private var childrenRes = List.empty[(ActorRef, Option[T])]
 

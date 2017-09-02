@@ -7,5 +7,5 @@ import pl.edu.agh.tensia.tensor.Tensor
   * Created by mathek on 04/06/2017.
   */
 trait OrderFinder {
-  def findContractionOrder[T, C](tensors:Seq[Tensor[T]]):Tree[T]
+  def findContractionOrder[T](tensors:Seq[Tensor[T]]):Tree[T]
 }

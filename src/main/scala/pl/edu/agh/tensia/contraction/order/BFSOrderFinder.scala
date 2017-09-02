@@ -13,7 +13,7 @@ object BFSOrderFinder extends OrderFinder{
   @native def ord(dimensionsSizes:Array[Int], contractedDimsSizes:Array[Array[Int]]):OrderFinderResult =
     throw new Error("jni fail")
 
-  override def findContractionOrder[T, C](tensors:Seq[Tensor[T]]) = {
+  override def findContractionOrder[T](tensors:Seq[Tensor[T]]) = {
     val dimsSizes = tensors map (_.dimensions.totalSize) toArray
     val contractedDimsSizes: Array[Array[Int]] = Array.fill(tensors.length, tensors.length)(1)
     for ((t1, i) <- tensors.zipWithIndex; (t2, j) <- tensors.zipWithIndex; if t1 != t2) {
