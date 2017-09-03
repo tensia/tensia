@@ -3,7 +3,7 @@ package pl.edu.agh.tensia.computation
 import akka.actor.ActorSystem
 import akka.testkit.TestProbe
 
-import pl.edu.agh.tensia.computation.comptree._
+import pl.edu.agh.tensia.computation.tree._
 
 class ComputationNodesTest extends org.scalatest.FlatSpec {
   implicit val system = ActorSystem()

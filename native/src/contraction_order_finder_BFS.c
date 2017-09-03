@@ -1,10 +1,12 @@
 #include<stdint.h>
 
-#include "jni/pl_edu_agh_tensia_contraction_order_BFSAlg__.h"
+#include "jni/pl_edu_agh_tensia_contraction_order_BFSOrderFinder__.h"
 
-#include "contraction_order_BFSAlg/ord.h"
+#include "contraction_order_finder_BFS/ord.h"
 
-JNIEXPORT jobject JNICALL Java_pl_edu_agh_tensia_contraction_1order_BFSAlg_00024_ord(
+#define RESULT_CLASS "pl/edu/agh/tensia/contraction/order/native/OrderFinderResult"
+
+JNIEXPORT jobject JNICALL Java_pl_edu_agh_tensia_contraction_order_BFSOrderFinder_00024_ord(
   JNIEnv* env, jobject obj, jintArray j_tensors_sizes,
   jobjectArray j_contracted_dims_sizes
 ) {
@@ -32,7 +34,7 @@ JNIEXPORT jobject JNICALL Java_pl_edu_agh_tensia_contraction_1order_BFSAlg_00024
       j_order_a[i] = (jint)order[i];
     (*env)->ReleaseIntArrayElements(env, j_order, j_order_a, 0);
     jclass resClass =
-      (*env)->FindClass(env, "pl/edu/agh/tensia/contraction_order/NativeContractionOrderResult");
+      (*env)->FindClass(env, RESULT_CLASS);
     jmethodID resConstructor =
       (*env)->GetMethodID(env, resClass, "<init>", "(J[I)V");
     jobject res=(*env)->NewObject(env, resClass, resConstructor, cost, j_order);

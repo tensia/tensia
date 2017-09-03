@@ -2,7 +2,7 @@ package pl.edu.agh.tensia.computation
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, Stash}
 import akka.pattern.pipe
-import pl.edu.agh.tensia.computation.comptree._
+import pl.edu.agh.tensia.computation.tree._
 
 import scala.concurrent.Future
 
@@ -13,7 +13,7 @@ object ComputationNode {
   def props[T](tree: Tree[T]): Props = Props(new ComputationNode[T](tree))
 }
 
-class ComputationNode[T](tree: Tree[T]) extends Actor with Stash with ActorLogging {
+case class ComputationNode[T](tree: Tree[T]) extends Actor with Stash with ActorLogging {
   import context.dispatcher
   private var childrenRes = List.empty[(ActorRef, Option[T])]
 
@@ -25,9 +25,13 @@ class ComputationNode[T](tree: Tree[T]) extends Actor with Stash with ActorLoggi
       })
     case Leaf(provider) =>
       val res = Future {
-        val res = Result[T](provider.get)
-        println(res)
-        res
+        try {
+          val res = Result[T](provider.get)
+          println("provided", res)
+          res
+        } catch {
+          case e:Error => e.printStackTrace()
+        }
       }
       res pipeTo context.parent
       context stop self
@@ -44,14 +48,13 @@ class ComputationNode[T](tree: Tree[T]) extends Actor with Stash with ActorLoggi
 
 
       if (childrenRes.forall(_._2.nonEmpty)) {
-        println(res)
         val node = tree.asInstanceOf[Node[T]]
         val List(lv, rv) = childrenRes.map(_._2.get)
         //todo improve error handling
         val nodeValue = Future {
           try {
             val res = Result(node.op(lv, rv))
-            println(res)
+            println("contraction_result", res)
             res
           }catch {
             case e:Error => e.printStackTrace()
