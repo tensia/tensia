@@ -11,26 +11,25 @@ case class NDTensor(content: INDArray, dimensions: Dimensions) extends NDTensor.
 
   override def contract(other: BaseType): BaseType = contract(other.asInstanceOf[NDTensor])
 
-  def contract(other: NDTensor): NDTensor = {
-
-    /* permute `this` to place contracted dimensions at the end */
-    val thisDims = dimensions.zipWithIndex.partition {
-      case (dim, _) => other.dimensions.contains(dim)
+  private def permuteForContraction(otherDims: Dimensions, reversed: Boolean): (Dimensions, Dimensions) = {
+    /* The condition here is basically `is dimension contracted?` */
+    val partitionedDims = dimensions.zipWithIndex.partition {
+      case (dim, _) => otherDims.contains(dim)
     }
-    val thisPermutedIndices = (thisDims._2 ++ thisDims._1).map(_._2)
-    System.err.println(thisPermutedIndices)
+    val thisPermutedIndices =
+    /* If not reversed, contracted dims are last */
+      if (!reversed) (partitionedDims._2 ++ partitionedDims._1).map(_._2)
+      else           (partitionedDims._1 ++ partitionedDims._2).map(_._2)
+
     content.permutei(thisPermutedIndices:_*)
 
-    /* permute `other` to place contracted dimensions in front */
-    val otherDims = other.dimensions.zipWithIndex.partition {
-      case (dim, _) => dimensions.contains(dim)
-    }
-    val otherPermutedIndices = (otherDims._1 ++ otherDims._2).map(_._2)
-    other.content.permutei(otherPermutedIndices:_*)
+    /* Don't return indices for dims */
+    (partitionedDims._1.map(_._1), partitionedDims._2.map(_._1))
+  }
 
-    lazy val contractedDims:Dimensions = thisDims._1.map(_._1)
-    lazy val thisRemainingDims:Dimensions = thisDims._2.map(_._1)
-    lazy val otherRemainingDims:Dimensions = otherDims._2.map(_._1)
+  def contract(other: NDTensor): NDTensor = {
+    val (contractedDims: Dimensions, thisRemainingDims: Dimensions) = this.permuteForContraction(other.dimensions, reversed = false)
+    val (_, otherRemainingDims: Dimensions) = other.permuteForContraction(this.dimensions, reversed = true)
 
     content.reshape(thisRemainingDims.totalSize, contractedDims.totalSize)
     other.content.reshape(otherRemainingDims.totalSize, contractedDims.totalSize)
