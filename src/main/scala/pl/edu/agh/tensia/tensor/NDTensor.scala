@@ -38,7 +38,8 @@ case class NDTensor(content: INDArray, dimensions: Dimensions) extends NDTensor.
 
     val resultDims = thisRemainingDims ++ otherRemainingDims
     val resultSizes = resultDims map {_.size}
-    result.reshape(resultSizes:_*)
+    if (resultSizes.nonEmpty)
+      result.reshape(resultSizes:_*)
 
     NDTensor(result, resultDims)
   }
