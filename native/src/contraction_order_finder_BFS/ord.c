@@ -9,16 +9,20 @@ typedef struct {
   uint64_t origin; // bitmask, where ith bit is one <=> tensor is descendant
                    // of ith original tensor
   uint64_t left; // origin of the left parent
+  char lock; // flag, if set, tensor cannot be contracted with any other
+             // 'locked' tensor; propagated through descendants
 } Tensor;
 
 /**
 Convinience function for creating Tensor structs
 */
 static inline Tensor* mk_tensor(
-  int64_t total_cost, int32_t size, int64_t origin, int64_t left
+  int64_t total_cost, int32_t size, int64_t origin, int64_t left, char lock
 ) {
   Tensor* t = malloc(sizeof(Tensor));
-  *t = (Tensor){.total_cost=total_cost, .size=size, .origin=origin, .left=left};
+  *t = (Tensor){
+      .total_cost=total_cost, .size=size, .origin=origin, .left=left, .lock=lock
+    };
   return t;
 }
 
@@ -59,7 +63,8 @@ static inline Tensor* contract(
     max(t1->total_cost, t2->total_cost) + (uint64_t)(t1->size) * t2->size / cds,
     (uint64_t)(t1->size) * t2->size / (cds * cds),
     t1->origin | t2->origin,
-    t1->origin
+    t1->origin,
+    t1->lock || t2->lock
   );
 }
 
@@ -129,7 +134,8 @@ Calculates best contraction order for parallel contraction computing
 @return total cost of contraction
 */
 uint64_t ord(
-  int* tensors_sizes, int** contracted_dims_sizes, int tensor_cnt, int** order
+  int* tensors_sizes, int** contracted_dims_sizes, char* tensors_locks,
+  int tensor_cnt, int** order
 ) {
   // Array of hash tables, where ith table contains best results for all
   // combinations of contracting i tensors. Tables indices are Tensor origins.
@@ -137,7 +143,8 @@ uint64_t ord(
   best_contr_results[0] = mk_hash_table();
   // Filling best_contr_results with initial tensors
   for(int i=0; i<tensor_cnt; i++) {
-    Tensor* t = mk_tensor(0, tensors_sizes[i], ((int64_t)1) << i, 0);
+    Tensor* t =
+      mk_tensor(0, tensors_sizes[i], ((int64_t)1) << i, 0, tensors_locks[i]);
     g_hash_table_insert(best_contr_results[0], (gpointer)&(t->origin), (gpointer)t);
   }
   // Iterating through all stages, where ith stage computes best_contr_results[i]
@@ -172,10 +179,12 @@ uint64_t ord(
           );
           debug("t2: ");
           debug_tensor(t2, tensor_cnt);
-          Tensor* c = contract(t1, t2, contracted_dims_sizes);
-          debug("c: ");
-          debug_tensor(c, tensor_cnt);
-          reflect(stage_content, c);
+          if(!t1->lock || !t2->lock) {
+            Tensor* c = contract(t1, t2, contracted_dims_sizes);
+            debug("c: ");
+            debug_tensor(c, tensor_cnt);
+            reflect(stage_content, c);
+          }
         }
         debug("\n");
       }
