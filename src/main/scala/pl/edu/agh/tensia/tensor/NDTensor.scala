@@ -69,4 +69,9 @@ object NDTensor {
   def scalar(content: Float): NDTensor = {
     NDTensor(Nd4j.create(1).addi(content), Dimensions(IndexedSeq()))
   }
+
+  def zero(dims: Dimension*): NDTensor = {
+    val shape: Array[Int] = dims.toArray.map(_.size)
+    NDTensor(Nd4j.zeros(shape:_*), Dimensions(dims.to[IndexedSeq]))
+  }
 }
