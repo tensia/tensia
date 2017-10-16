@@ -14,7 +14,10 @@ class BFSOrderFinderSpecs extends FunSpec with Matchers {
       val d = Seq(Dimension(2), Dimension(3), Dimension(4), Dimension(5))
       val tensors = Seq(ScalaTensor.zero(d(1), d(2)), ScalaTensor.zero(d(2), d(3)), ScalaTensor.zero(d(0), d(1), d(3)))
       val Seq(t0, t1, t2) = tensors
-      BFSOrderFinder findContractionOrder tensors shouldEqual Node(t2, Node(t0, t1))
+
+      for(i <- 1 to 1000) {
+        BFSOrderFinder findContractionOrder tensors shouldEqual Node(t2, Node(t0, t1))
+      }
     }
 
     it("should order contractions properly v2") {
