@@ -74,7 +74,7 @@ has lower total_cost
 static inline void reflect(GHashTable* ht, Tensor* t) {
   Tensor* ot = (Tensor*)g_hash_table_lookup(ht, (gconstpointer)&(t->origin));
   if(!ot || t->total_cost < ot->total_cost)
-    g_hash_table_insert(ht, (gpointer)&(t->origin), (gpointer)t);
+    g_hash_table_replace(ht, (gpointer)&(t->origin), (gpointer)t);
 }
 
 /**
@@ -145,7 +145,7 @@ uint64_t ord(
     GHashTable* stage_content = best_contr_results[stage-1] = mk_hash_table();
     // Checking Tensors in all pairs of stages, which numbers sum up to current
     // stage numbers
-    for(int st1=1; st1<=(stage+1)/2; st1++) {
+    for(int st1=1; st1<=stage/2; st1++) {
       int st2 = stage - st1;
       debug("s: %d %d %d\n", stage, st1, st2);
       GHashTableIter st1_i;
