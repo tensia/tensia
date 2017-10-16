@@ -10,10 +10,10 @@ extern "C" {
 /*
  * Class:     pl_edu_agh_tensia_contraction_order_BFSOrderFinder__
  * Method:    ord
- * Signature: ([I[[I)Lpl/edu/agh/tensia/contraction/order/utils/NativeOrderFinderResultParser;
+ * Signature: ([I[[I[Z)Lpl/edu/agh/tensia/contraction/order/NativeOrderFinderResult;
  */
 JNIEXPORT jobject JNICALL Java_pl_edu_agh_tensia_contraction_order_BFSOrderFinder_00024_ord
-  (JNIEnv *, jobject, jintArray, jobjectArray);
+  (JNIEnv *, jobject, jintArray, jobjectArray, jbooleanArray);
 
 #ifdef __cplusplus
 }
