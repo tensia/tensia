@@ -24,7 +24,7 @@ class NDTensorSpecs extends FunSpec with Matchers {
       it("should contract matrices into scalar") {
         val d1:Dimension = 2
         val d2:Dimension = 2
-        NDTensor(Array(3, 4, 5, 6), d1, d2) ~ NDTensor(Array(1, 2, 5, 7), d1, d2) shouldEqual NDTensor(Array(78), 1)
+        NDTensor(Array(3, 4, 5, 6), d1, d2) ~ NDTensor(Array(1, 2, 5, 7), d1, d2) shouldEqual NDTensor.scalar(78)
       }
 
       it("should calculate inner product of matrices using contraction") {

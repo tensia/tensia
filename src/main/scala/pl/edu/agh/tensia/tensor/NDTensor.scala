@@ -31,10 +31,10 @@ case class NDTensor(content: INDArray, dimensions: Dimensions) extends NDTensor.
     val (contractedDims: Dimensions, thisRemainingDims: Dimensions) = this.permuteForContraction(other.dimensions, reversed = false)
     val (_, otherRemainingDims: Dimensions) = other.permuteForContraction(this.dimensions, reversed = true)
 
-    content.reshape(thisRemainingDims.totalSize, contractedDims.totalSize)
-    other.content.reshape(otherRemainingDims.totalSize, contractedDims.totalSize)
+    val a = content.reshape(thisRemainingDims.totalSize, contractedDims.totalSize)
+    val b = other.content.reshape(contractedDims.totalSize, otherRemainingDims.totalSize)
 
-    val result = content.mmul(other.content)
+    val result = a.mmul(b)
 
     val resultDims = thisRemainingDims ++ otherRemainingDims
     val resultSizes = resultDims map {_.size}
@@ -64,5 +64,14 @@ object NDTensor {
     val shape: Array[Int] = dims.toArray.map(_.size)
     val castedContent = content.map(_.toFloat)
     NDTensor(Nd4j.create(castedContent, shape), Dimensions(dims.to[IndexedSeq]))
+  }
+
+  def scalar(content: Float): NDTensor = {
+    NDTensor(Nd4j.create(1).addi(content), Dimensions(IndexedSeq()))
+  }
+
+  def zero(dims: Dimension*): NDTensor = {
+    val shape: Array[Int] = dims.toArray.map(_.size)
+    NDTensor(Nd4j.zeros(shape:_*), Dimensions(dims.to[IndexedSeq]))
   }
 }
