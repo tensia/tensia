@@ -1,67 +1,56 @@
 package pl.edu.agh.tensia.computation
 
-import akka.actor.{Actor, ActorLogging, ActorRef, Props, Stash}
+import akka.actor._
 import akka.pattern.pipe
-import pl.edu.agh.tensia.computation.tree._
+import tree._
 
 import scala.concurrent.Future
 
-case object GetResult
 case class Result[T](r: T)
 
 object ComputationNode {
   def props[T](tree: Tree[T]): Props = Props(new ComputationNode[T](tree))
 }
 
-case class ComputationNode[T](tree: Tree[T]) extends Actor with Stash with ActorLogging {
+case class ComputationNode[T](tree: Tree[T]) extends Actor {
   import context.dispatcher
-  private var childrenRes = List.empty[(ActorRef, Option[T])]
 
-  tree match {
+  override def receive = tree match {
     case Node(op, l, r) =>
-      childrenRes = List(l, r).map(subTree => {
-        val childActor = context.actorOf(ComputationNode.props(subTree))
-        (childActor, None)
-      })
+      List(l, r) map {subTree => context actorOf ComputationNode.props(subTree)}
+      node(op)
     case Leaf(provider) =>
-      val res = Future {
-        try {
-          val res = Result[T](provider.get)
-          println("provided", res)
-          res
-        } catch {
-          case e:Error => e.printStackTrace()
-        }
-      }
-      res pipeTo context.parent
-      context stop self
+      Future {
+        val res = Result[T](provider.get)
+        println("provided", res)
+        res
+      } pipeTo self
+      forwardingResult
     case Empty =>
       context stop self
+      PartialFunction.empty
   }
 
-  override def receive: Receive = {
-     case Result(res: T @unchecked) =>
-      val List(l @ (lc, _), r @ (rc, _)) = childrenRes
-      childrenRes =
-        if (lc == sender) List((lc, Some(res)),r)
-        else List(l, (rc, Some(res)))
+  def forwardingResult: Receive = {
+    case res:Result[T @unchecked] =>
+      context.parent ! res
+      context stop self
+    case Status.Failure(ex) => throw ex
+  }
 
-
-      if (childrenRes.forall(_._2.nonEmpty)) {
-        val node = tree.asInstanceOf[Node[T]]
-        val List(lv, rv) = childrenRes.map(_._2.get)
-        //todo improve error handling
-        val nodeValue = Future {
-          try {
-            val res = Result(node.op(lv, rv))
+  def node(op:BinOp[T], results: List[T] = List()): Receive = {
+    case Result(res: T @unchecked) =>
+      res :: results match {
+        case List(l, r) =>
+          Future {
+            val res = Result(op(l, r))
             println("contraction_result", res)
             res
-          }catch {
-            case e:Error => e.printStackTrace()
-          }
-        }
-        nodeValue pipeTo context.parent
-        context stop self
+          } pipeTo self
+          context become forwardingResult
+        case l =>
+          context become node(op, l)
       }
   }
+
 }
