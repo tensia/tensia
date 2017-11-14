@@ -1,7 +1,7 @@
 package pl.edu.agh.tensia
 
-import pl.edu.agh.tensia.contraction.order.OrderFinder
-import pl.edu.agh.tensia.tensor.Tensor
+import contraction.order.OrderFinder
+import tensor.Tensor
 
 /**
   * Created by mathek on 02/09/2017.

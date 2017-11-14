@@ -6,6 +6,8 @@ package pl.edu.agh.tensia.tensor
 case class Dimension(size: Int) {
   override def toString: String = s"d$size@$hashCode"
 
+  override def hashCode(): Int = super.hashCode()
+
   override def equals(obj: Any): Boolean = super.equals(obj)
 }
 
