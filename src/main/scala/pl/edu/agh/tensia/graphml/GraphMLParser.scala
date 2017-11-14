@@ -23,12 +23,12 @@ object GraphMLParser {
   }
 
   def parseNode(node: Node): TensorNode = {
-    val dims: Array[Dimension] = getDataById(node, "shape")
+    val dims: Array[Dimension] = getDataByKey(node, "shape")
       .split(',')
       .map(Integer.parseInt)
       .map(Dimension(_))
 
-    val dataPath = getDataById(node, "dataPath")
+    val dataPath = getDataByKey(node, "dataPath")
 
     TensorNode(dataPath, dims)
   }
@@ -37,12 +37,12 @@ object GraphMLParser {
     nodeSeq.map { node =>
       val srcId   = node \@ "source"
       val destId  = node \@ "target"
-      val srcDim  = Integer.parseInt(getDataById(node, "srcDim"))
-      val destDim = Integer.parseInt(getDataById(node, "destDim"))
+      val srcDim  = Integer.parseInt(getDataByKey(node, "srcDim"))
+      val destDim = Integer.parseInt(getDataByKey(node, "destDim"))
       EdgeNode(srcId, srcDim, destId, destDim)
     }
   }
 
-  private def getDataById(node: Node, id: String): String =
-    (node \ "data").find(_ \@ "id" == id).get.text
+  private def getDataByKey(node: Node, id: String): String =
+    (node \ "data").find(_ \@ "key" == id).get.text
 }
