@@ -1,12 +1,19 @@
 package pl.edu.agh.tensia.graphml
 
+import java.nio.file.{Path, Paths}
+
 import org.scalatest.{FunSpec, Matchers}
 import pl.edu.agh.tensia.TensorNetwork
+import pl.edu.agh.tensia.contraction.order.BFSOrderFinder
 import pl.edu.agh.tensia.tensor.NDTensor
 
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
 import scala.xml._
 
 class GraphMLParserTest extends FunSpec with Matchers {
+  val aPath = Paths.get("src/test/resources/a.bin").toAbsolutePath
+  val bPath = Paths.get("src/test/resources/b.bin").toAbsolutePath
 
   describe("GraphMLParserTest") {
 
@@ -15,11 +22,11 @@ class GraphMLParserTest extends FunSpec with Matchers {
         <graph>
           <node id="a">
             <data key="shape">2,3</data>
-            <data key="dataPath">/path/to/data</data>
+            <data key="dataPath">{aPath.toString}</data>
           </node>
           <node id="b">
             <data key="shape">3,4</data>
-            <data key="dataPath">/path/to/data</data>
+            <data key="dataPath">{bPath.toString}</data>
           </node>
           <edge id="e1" source="a" target="b">
             <data key="srcDim">1</data>
@@ -69,11 +76,11 @@ class GraphMLParserTest extends FunSpec with Matchers {
         <graph>
           <node id="a">
             <data key="shape">2,3</data>
-            <data key="dataPath">/path/to/data</data>
+            <data key="dataPath">{aPath.toString}</data>
           </node>
           <node id="b">
             <data key="shape">3,4</data>
-            <data key="dataPath">/path/to/data</data>
+            <data key="dataPath">{bPath.toString}</data>
           </node>
           <edge id="e1" source="a" target="b">
             <data key="srcDim">1</data>
@@ -85,6 +92,7 @@ class GraphMLParserTest extends FunSpec with Matchers {
 
       res.tensors should have length 2
       //TODO: Check result
+      Await.result(res.contract(BFSOrderFinder), Duration.Inf)
     }
 
   }

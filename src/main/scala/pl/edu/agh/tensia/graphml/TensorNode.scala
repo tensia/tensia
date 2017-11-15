@@ -1,16 +1,16 @@
 package pl.edu.agh.tensia.graphml
 
+import java.io.File
+
+import org.nd4j.linalg.factory.Nd4j
 import pl.edu.agh.tensia.tensor.{Dimension, NDTensor}
 
-object TensorNode {
-  def apply(dataPath: String,dims: Array[Dimension]): TensorNode =
-    new TensorNode(dataPath, dims)
-}
 
-class TensorNode(val dataPath: String, val dims: Array[Dimension]) {
+case class TensorNode(dataPath: String, dims: Array[Dimension]) {
 
   def toTensor: NDTensor = {
     if (dims.contains(null)) throw new IllegalStateException("Cannot create tensor with null")
-    NDTensor.zero(dims:_*)
+    val array = Nd4j.readBinary(new File(dataPath))
+    NDTensor(array, dims:_*)
   }
 }
