@@ -6,14 +6,15 @@ import pl.edu.agh.tensia.tensor.Tensor
 /**
   * Created by mathek on 03/06/2017.
   */
-case class NativeOrderFinderResult(cost:Long, order:Array[Int]) {
+case class NativeOrderFinderResult(cost:Long, order:Array[Array[Int]]) {
 
-  override def toString: String = s"NativeOrderFinderResult($cost, Array(${order mkString ", "}))"
+  override def toString: String = s"NativeOrderFinderResult($cost, Array(${order.deep mkString ", "}))"
 
-  def toContractionTree[T](tensors:IndexedSeq[Tensor[T]]) = {
-    def mkContractionTree(ind:Int):Tree[T] =
+  def toContractionTrees[T](tensors:IndexedSeq[Tensor[T]]):Seq[Tree[T]] = {
+    def mkContractionTree(order: Array[Int], ind:Int):Tree[T] = {
       if (order(ind) < tensors.size) Leaf(tensors(order(ind)))
-      else Node(mkContractionTree(ind + 1), mkContractionTree(order(ind) - tensors.size))
-    mkContractionTree(0)
+      else Node(mkContractionTree(order, ind + 1), mkContractionTree(order, order(ind) - tensors.size))
+    }
+    order map (mkContractionTree(_, 0))
   }
 }

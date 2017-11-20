@@ -12,15 +12,16 @@ object BFSOrderFinder extends OrderFinder{
   @native def ord(dimensionsSizes:Array[Int], contractedDimsSizes:Array[Array[Int]], locks:Array[Boolean]):NativeOrderFinderResult =
     throw new Error("jni fail")
 
-  override def findContractionOrder[T](tensors:Seq[Tensor[T]], locked:Seq[Tensor[T]] = Seq()) = {
+  override def findContractionOrder[T](rawTensors:Seq[Tensor[T]], lockedTensors:Seq[Tensor[T]]) = {
+    val tensors = rawTensors partition lockedTensors.toSet.contains match {case (locked, unlocked) => locked ++ unlocked}
     val dimsSizes = tensors map (_.dimensions.totalSize) toArray
     val contractedDimsSizes: Array[Array[Int]] = Array.fill(tensors.length, tensors.length)(1)
     for ((t1, i) <- tensors.zipWithIndex; (t2, j) <- tensors.zipWithIndex; if t1 != t2) {
       val contractedDims: Dimensions = t1.dimensions intersect t2.dimensions
       contractedDimsSizes(i)(j) = contractedDims.totalSize
     }
-    val locks = tensors map locked.toSet.contains toArray
+    val locks = tensors map lockedTensors.toSet.contains toArray
 
-    ord(dimsSizes, contractedDimsSizes, locks) toContractionTree tensors.toIndexedSeq
+    ord(dimsSizes, contractedDimsSizes, locks) toContractionTrees tensors.toIndexedSeq
   }
 }

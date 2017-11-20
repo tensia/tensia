@@ -19,9 +19,14 @@ JNIEXPORT jobject JNICALL Java_pl_edu_agh_tensia_contraction_order_BFSOrderFinde
       contracted_dims_sizes[i] = (int*)(*env)->GetIntArrayElements(env, a, 0);
     }
     unsigned char* tensors_locks = (unsigned char*)(*env)->GetBooleanArrayElements(env, j_tensors_locks, 0);
-    int* order = NULL;
+    int locked_cnt = 0;
+      for(int i=0; i<tensor_cnt;i++)
+        if(tensors_locks[i])
+          locked_cnt++;
+    int** order = NULL;
     uint64_t cost =
       ord(tensors_sizes, contracted_dims_sizes, tensors_locks, tensor_cnt, &order);
+    debug("ord finished\n");
     for(int i=0; i<tensor_cnt; i++) {
       jintArray a =
         (jintArray)(*env)->GetObjectArrayElement(env, j_contracted_dims_sizes, i);
@@ -30,17 +35,22 @@ JNIEXPORT jobject JNICALL Java_pl_edu_agh_tensia_contraction_order_BFSOrderFinde
     }
     (*env)->ReleaseIntArrayElements(env, j_tensors_sizes, tensors_sizes, 0);
     (*env)->ReleaseBooleanArrayElements(env, j_tensors_locks, tensors_locks, 0);
+    debug("release finished\n");
 
-    int orderSize = 2*tensor_cnt-1;
-    jintArray j_order = (*env)->NewIntArray(env, orderSize);
-    jint *j_order_a = (*env)->GetIntArrayElements(env, j_order, 0);
-    for(int i=0; i<orderSize; i++)
-      j_order_a[i] = (jint)order[i];
-    (*env)->ReleaseIntArrayElements(env, j_order, j_order_a, 0);
-    jclass resClass =
-      (*env)->FindClass(env, RESULT_CLASS);
-    jmethodID resConstructor =
-      (*env)->GetMethodID(env, resClass, "<init>", "(J[I)V");
+    jclass cls = (*env)->FindClass(env, "[I");
+    jobjectArray j_order = (*env)->NewObjectArray(env, MAX(1, locked_cnt), cls, NULL);
+
+    for (int i = 0; i < MAX(1, locked_cnt); i++) {
+      int size = order[i][0];
+      jintArray j_inner_order = (*env)->NewIntArray(env, size);
+      (*env)->SetIntArrayRegion(env, j_inner_order, 0, size, order[i]+1);
+      // set inner's values
+      (*env)->SetObjectArrayElement(env, j_order, i, j_inner_order);
+      (*env)->DeleteLocalRef(env, j_inner_order);
+    }
+    debug("out array created\n");
+    jclass resClass = (*env)->FindClass(env, RESULT_CLASS);
+    jmethodID resConstructor = (*env)->GetMethodID(env, resClass, "<init>", "(J[[I)V");
     jobject res=(*env)->NewObject(env, resClass, resConstructor, cost, j_order);
     return res;
   }

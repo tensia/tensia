@@ -93,27 +93,23 @@ assumes that best_contr_results are already calculated
 static inline Tensor* get_contr_results(
   GHashTable** best_contr_results, uint64_t origin
 ) {
-  printf("tid: %d, tp: %d\n", hamming0(origin)-1, (int)best_contr_results[hamming0(origin)-1]);
   return (Tensor*)g_hash_table_lookup(
     best_contr_results[hamming0(origin)-1], (gconstpointer)&origin
   );
 }
 
 void store_order_r(
-  int* order, int* i, Tensor* t, GHashTable** best_contr_results, int tensor_cnt
+  int* order, int* i, uint64_t origin, GHashTable** best_contr_results, int tensor_cnt
 ) {
-  if(hamming0(t->origin) == 1)
+  Tensor *t = get_contr_results(best_contr_results, origin);
+  if(hamming0(t->origin) == 1) {
     order[(*i)++] = de_brujin(t->origin);
-  else {
+  } else {
     int idx = *i;
     (*i)++;
-    Tensor* l = get_contr_results(best_contr_results, t->left);
-    store_order_r(order, i, l, best_contr_results, tensor_cnt);
-
+    store_order_r(order, i, t->left, best_contr_results, tensor_cnt);
     order[idx] = *i + tensor_cnt;
-    Tensor* r = get_contr_results(best_contr_results, t->origin&~t->left);
-    debug_tensor(r, tensor_cnt);
-    store_order_r(order, i, r, best_contr_results, tensor_cnt);
+    store_order_r(order, i, t->origin&~t->left, best_contr_results, tensor_cnt);
   }
 }
 
@@ -121,11 +117,51 @@ void store_order_r(
 Stores contraction order tree in array
 @return array with contraction order
 */
-int* store_order(Tensor* t, GHashTable** best_contr_results, int tensor_cnt) {
-  int* order = malloc((2*tensor_cnt - 1) * sizeof(int));
+int* store_order(uint64_t origin, GHashTable** best_contr_results, int tensor_cnt, int total_tensor_cnt) {
+  int* order = malloc(2*sizeof(int) + (2*tensor_cnt - 1) * sizeof(int));
   int i = 0;
-  store_order_r(order, &i, t, best_contr_results, tensor_cnt);
+  order[0] = 2*tensor_cnt;
+  store_order_r(order+1, &i, origin, best_contr_results, total_tensor_cnt);
   return order;
+}
+
+void match_to_locked_r(GHashTable** best_contr_results, int tensor_cnt, int locked_cnt, int tensor_id, uint64_t* matchings, uint64_t* best_cost, uint64_t* best_matchings) {
+  if(tensor_id < tensor_cnt) {
+    uint64_t tensor_id_mask = 1 << tensor_id;
+    for(int i = 0; i < locked_cnt; i++) {
+      matchings[i] |= tensor_id_mask;
+      debug("moving tensor %d to matching %d: ", tensor_id, i);
+      debug_bits(matchings[i], tensor_cnt);
+      debug("\n");
+      match_to_locked_r(best_contr_results, tensor_cnt, locked_cnt, tensor_id+1, matchings, best_cost, best_matchings);
+      matchings[i] &= ~tensor_id_mask;
+    }
+  } else {
+    uint64_t max_cost = 0;
+    for(int i = 0; i < locked_cnt; i++) {
+      debug("checking matching %d: ", i);
+      debug_bits(matchings[i], tensor_cnt);
+      debug("\n");
+      Tensor* res = get_contr_results(best_contr_results, matchings[i]);
+      debug("res %p\n", res);
+      if(!res) return;
+      debug_tensor(res, tensor_cnt);
+      if(res->total_cost > max_cost) max_cost = res->total_cost;
+    }
+    if(!*best_cost || max_cost < *best_cost) {
+      memcpy(best_matchings, matchings, locked_cnt*sizeof(uint64_t));
+      *best_cost = max_cost;
+    }
+  }
+}
+
+uint64_t match_to_locked(GHashTable** best_contr_results, int tensor_cnt, int locked_cnt, uint64_t** best_matchings) {
+  uint64_t matchings[locked_cnt];
+  for(int i=0; i<locked_cnt; i++) matchings[i] = 1 << i;
+  uint64_t best_cost = 0;
+  *best_matchings = malloc(locked_cnt*sizeof(uint64_t));
+  match_to_locked_r(best_contr_results, tensor_cnt, locked_cnt, locked_cnt, matchings, &best_cost, *best_matchings);
+  return best_cost;
 }
 
 /**
@@ -142,30 +178,31 @@ Calculates best contraction order for parallel contraction computing
 */
 uint64_t ord(
   int* tensors_sizes, int** contracted_dims_sizes, unsigned char* tensors_locks,
-  int tensor_cnt, int** order
+  int tensor_cnt, int*** order
 ) {
 
   int locked_cnt = 0;
   for(int i=0; i<tensor_cnt;i++)
     if(tensors_locks[i])
       locked_cnt++;
-  printf("lcnt: %d\n", locked_cnt);
+  debug("lcnt: %d\n", locked_cnt);
   int unlocked_cnt = tensor_cnt - locked_cnt;
   // Array of hash tables, where ith table contains best results for all
   // combinations of contracting i tensors. Tables indices are Tensor origins.
-  GHashTable* best_contr_results[unlocked_cnt];
-  for(int i=0; i<unlocked_cnt; i++)
+  GHashTable* best_contr_results[unlocked_cnt+1];
+  for(int i=0; i<=unlocked_cnt; i++)
     best_contr_results[i] = NULL;
 
   best_contr_results[0] = mk_hash_table();
   // Filling best_contr_results with initial tensors
-  for(int i=0; i<unlocked_cnt; i++) {
+  for(int i=0; i<tensor_cnt; i++) {
     Tensor* t =
       mk_tensor(0, tensors_sizes[i], ((int64_t)1) << i, 0, tensors_locks[i]);
+    debug_tensor(t, tensor_cnt);
     g_hash_table_insert(best_contr_results[0], (gpointer)&(t->origin), (gpointer)t);
   }
   // Iterating through all stages, where ith stage computes best_contr_results[i]
-  for(int stage=2; stage<=unlocked_cnt; stage++) {
+  for(int stage=2; stage<=unlocked_cnt+1; stage++) {
     GHashTable* stage_content = best_contr_results[stage-1] = mk_hash_table();
     // Checking Tensors in all pairs of stages, which numbers sum up to current
     // stage numbers
@@ -181,27 +218,20 @@ uint64_t ord(
         debug_tensor(t1, tensor_cnt);
         // Iterating through all tensors in st2 that can be contracted with st1
         // which means that t1.origin & t2.origin == 0 for each t1, t2
-        for(
-          uint64_t comb = init_bin_comb(st2);
-          comb;
-          comb=next_bin_comb(comb, tensor_cnt-st1)
-        ) {
-          uint64_t scaled_comb=comb;
-          for(uint64_t o1=t1->origin; o1 > 0; o1&=(o1-1)) {
-            uint64_t b = o1&(-o1);
-            scaled_comb = ((scaled_comb&~(b-1))<<1)|(scaled_comb&(b-1));
-          }
-          Tensor* t2 = (Tensor*)g_hash_table_lookup(
-            best_contr_results[st2-1], (gconstpointer)&scaled_comb
-          );
+
+        GHashTableIter st2_i;
+        g_hash_table_iter_init(&st2_i, best_contr_results[st2-1]);
+        Tensor* t2;
+        while(g_hash_table_iter_next(&st2_i, NULL, (gpointer*)&t2)){
           debug("t2: ");
           debug_tensor(t2, tensor_cnt);
-          if(!t1->lock || !t2->lock) {
+          if((t1->origin & t2->origin) == 0 && (!t1->lock || !t2->lock)) {
+            debug("fits\n");
             Tensor* c = contract(t1, t2, contracted_dims_sizes);
             debug("c: ");
             debug_tensor(c, tensor_cnt);
             reflect(stage_content, c);
-          }
+          } else debug("doesnt fit\n");
         }
         debug("\n");
       }
@@ -209,22 +239,34 @@ uint64_t ord(
   }
 
 
-  int* orders[locked_cnt];
-  Tensor* final_t;
-  GHashTableIter final_i;
-  g_hash_table_iter_init(&final_i, best_contr_results[unlocked_cnt-1]);
-  uint64_t total_cost = 0;
-  for(int i=0; g_hash_table_iter_next(&final_i, NULL, (gpointer*)&final_t); i++) {
-    debug_tensor(final_t, tensor_cnt);
-    orders[i] = store_order(final_t, best_contr_results, unlocked_cnt);
-    total_cost += final_t->total_cost;
+  uint64_t total_cost;
+
+  if(locked_cnt == 0) {
+    Tensor* final_tensor = (Tensor*)g_list_first(g_hash_table_get_values(
+          best_contr_results[tensor_cnt-1]
+        ))->data;
+    // Storing contraction tree in array
+    *order = malloc(sizeof(int*));
+    **order = store_order(final_tensor->origin, best_contr_results, tensor_cnt, tensor_cnt);
+    total_cost = final_tensor->total_cost;
+  } else {
+    uint64_t* origins;
+    total_cost = match_to_locked(best_contr_results, tensor_cnt, locked_cnt, &origins);
+    debug("matching done\n");
+    *order = malloc(locked_cnt*sizeof(int*));
+    for(int i = 0; i < locked_cnt; i++) {
+      debug("storing tree %d\n", i);
+      debug_bits(origins[i], tensor_cnt);
+      debug("\n");
+      Tensor* t = get_contr_results(best_contr_results, origins[i]);
+      debug_tensor(t, tensor_cnt);
+      (*order)[i] = store_order(origins[i], best_contr_results, hamming0(origins[i]), tensor_cnt);
+      debug("stored tree %d\n", i);
+    }
   }
 
-  *order = orders[0];
-
-
-  for(int i=1; i<unlocked_cnt; i++) {
-    debug("freeing %d %d\n", i, best_contr_results[i]);
+  for(int i=1; i<=unlocked_cnt; i++) {
+    debug("freeing %d %p\n", i, best_contr_results[i]);
     g_hash_table_destroy(best_contr_results[i]);
   }
   return total_cost;
