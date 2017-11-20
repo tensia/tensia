@@ -9,19 +9,17 @@ typedef struct {
   uint64_t origin; // bitmask, where ith bit is one <=> tensor is descendant
                    // of ith original tensor
   uint64_t left; // origin of the left parent
-  unsigned char lock; // flag, if set, tensor cannot be contracted with any other
-             // 'locked' tensor; propagated through descendants
 } Tensor;
 
 /**
 Convinience function for creating Tensor structs
 */
 static inline Tensor* mk_tensor(
-  int64_t total_cost, int32_t size, int64_t origin, int64_t left, unsigned char lock
+  int64_t total_cost, int32_t size, int64_t origin, int64_t left
 ) {
   Tensor* t = malloc(sizeof(Tensor));
   *t = (Tensor){
-      .total_cost=total_cost, .size=size, .origin=origin, .left=left, .lock=lock
+      .total_cost=total_cost, .size=size, .origin=origin, .left=left
     };
   return t;
 }
@@ -67,8 +65,7 @@ static inline Tensor* contract(
     max(t1->total_cost, t2->total_cost) + (uint64_t)(t1->size) * t2->size / cds,
     (uint64_t)(t1->size) * t2->size / (cds * cds),
     t1->origin | t2->origin,
-    t1->origin,
-    t1->lock || t2->lock
+    t1->origin
   );
 }
 
@@ -177,15 +174,11 @@ Calculates best contraction order for parallel contraction computing
 @return total cost of contraction
 */
 uint64_t ord(
-  int* tensors_sizes, int** contracted_dims_sizes, unsigned char* tensors_locks,
+  int* tensors_sizes, int** contracted_dims_sizes, int locked_cnt,
   int tensor_cnt, int*** order
 ) {
 
-  int locked_cnt = 0;
-  for(int i=0; i<tensor_cnt;i++)
-    if(tensors_locks[i])
-      locked_cnt++;
-  debug("lcnt: %d\n", locked_cnt);
+  uint64_t lock_mask = (1 << locked_cnt) - 1;
   int unlocked_cnt = tensor_cnt - locked_cnt;
   // Array of hash tables, where ith table contains best results for all
   // combinations of contracting i tensors. Tables indices are Tensor origins.
@@ -197,7 +190,7 @@ uint64_t ord(
   // Filling best_contr_results with initial tensors
   for(int i=0; i<tensor_cnt; i++) {
     Tensor* t =
-      mk_tensor(0, tensors_sizes[i], ((int64_t)1) << i, 0, tensors_locks[i]);
+      mk_tensor(0, tensors_sizes[i], ((int64_t)1) << i, 0);
     debug_tensor(t, tensor_cnt);
     g_hash_table_insert(best_contr_results[0], (gpointer)&(t->origin), (gpointer)t);
   }
@@ -225,7 +218,7 @@ uint64_t ord(
         while(g_hash_table_iter_next(&st2_i, NULL, (gpointer*)&t2)){
           debug("t2: ");
           debug_tensor(t2, tensor_cnt);
-          if((t1->origin & t2->origin) == 0 && (!t1->lock || !t2->lock)) {
+          if((t1->origin & t2->origin) == 0 && ((t1->origin & lock_mask) == 0 || (t2->origin & lock_mask) == 0)) {
             debug("fits\n");
             Tensor* c = contract(t1, t2, contracted_dims_sizes);
             debug("c: ");

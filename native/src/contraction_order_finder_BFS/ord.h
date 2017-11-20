@@ -8,6 +8,6 @@
 #include "../helpers/bitmask.h"
 
 uint64_t ord(
-  int* tensors_sizes, int** contracted_dims_sizes, unsigned char* tensors_locks,
+  int* tensors_sizes, int** contracted_dims_sizes, int locked_cnt,
   int tensor_cnt, int*** order
 );

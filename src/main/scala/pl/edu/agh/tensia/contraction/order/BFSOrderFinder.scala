@@ -9,7 +9,7 @@ import pl.edu.agh.tensia.tensor._
 
 object BFSOrderFinder extends OrderFinder{
   loadLib("contraction_order_finder_BFS")
-  @native def ord(dimensionsSizes:Array[Int], contractedDimsSizes:Array[Array[Int]], locks:Array[Boolean]):NativeOrderFinderResult =
+  @native def ord(dimensionsSizes:Array[Int], contractedDimsSizes:Array[Array[Int]], locked_cnt:Int):NativeOrderFinderResult =
     throw new Error("jni fail")
 
   override def findContractionOrder[T](rawTensors:Seq[Tensor[T]], lockedTensors:Seq[Tensor[T]]) = {
@@ -20,8 +20,7 @@ object BFSOrderFinder extends OrderFinder{
       val contractedDims: Dimensions = t1.dimensions intersect t2.dimensions
       contractedDimsSizes(i)(j) = contractedDims.totalSize
     }
-    val locks = tensors map lockedTensors.toSet.contains toArray
 
-    ord(dimsSizes, contractedDimsSizes, locks) toContractionTrees tensors.toIndexedSeq
+    ord(dimsSizes, contractedDimsSizes, lockedTensors.size) toContractionTrees tensors.toIndexedSeq
   }
 }
