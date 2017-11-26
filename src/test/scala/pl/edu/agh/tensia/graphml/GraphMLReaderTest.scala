@@ -91,7 +91,7 @@ class GraphMLReaderTest extends FunSpec with Matchers {
       res.head should equal (EdgeNode("n0", 1, "n1", 2))
     }
 
-    it("should create tensorNetworkFromXML") {
+    it("should create tensorNetworkFromGraph") {
       val graph =
         <graph>
           <node id="a">
@@ -108,7 +108,7 @@ class GraphMLReaderTest extends FunSpec with Matchers {
           </edge>
         </graph>
 
-      val res: TensorNetwork[NDTensor] = GraphMLReader.tensorNetworkFromXML(graph)._1
+      val res: TensorNetwork[NDTensor] = GraphMLReader.tensorNetworkFromGraph(graph)._1
 
       res.tensors should have length 2
       //TODO: Check result

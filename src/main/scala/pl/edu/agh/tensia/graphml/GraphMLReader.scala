@@ -8,6 +8,10 @@ import scala.xml._
 
 object GraphMLReader {
   def tensorNetworkFromXML(xml: Elem): (TensorNetwork[NDTensor], Seq[NDTensor]) = {
+    tensorNetworkFromGraph(xml \ "graph")
+  }
+
+  def tensorNetworkFromGraph(xml: NodeSeq): (TensorNetwork[NDTensor], Seq[NDTensor]) = {
     val nodesMap = parseNodes(xml \ "node")
     val edges = parseEdges(xml \ "edge")
     for (edge <- edges) {
@@ -22,7 +26,7 @@ object GraphMLReader {
       lockedNodes.map(_.toTensor).toSeq,
       unlockedNodes.map(_.toTensor).toSeq,
     )
-    
+
     (TensorNetwork(unlockedTensors ++ lockedTensors), lockedTensors)
   }
 
