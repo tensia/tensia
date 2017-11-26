@@ -11,11 +11,11 @@ import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 import scala.xml._
 
-class GraphMLParserTest extends FunSpec with Matchers {
+class GraphMLReaderTest extends FunSpec with Matchers {
   val aPath = Paths.get("src/test/resources/a.bin").toAbsolutePath
   val bPath = Paths.get("src/test/resources/b.bin").toAbsolutePath
 
-  describe("GraphMLParserTest") {
+  describe("GraphMLReaderTest") {
 
     it("should parseNodes") {
       val graph =
@@ -34,7 +34,7 @@ class GraphMLParserTest extends FunSpec with Matchers {
           </edge>
         </graph>
 
-      val res = GraphMLParser.parseNodes(graph \ "node")
+      val res = GraphMLReader.parseNodes(graph \ "node")
 
       res.get("a") should not be empty
       res.get("b") should not be empty
@@ -48,7 +48,7 @@ class GraphMLParserTest extends FunSpec with Matchers {
           <data key="dataPath">/path/to/data</data>
         </node>
 
-      val res = GraphMLParser.parseNode(node)
+      val res = GraphMLReader.parseNode(node)
       res.dims should have length 2
       res.dims(0) should have size 2
       res.dims(1) should have size 2
@@ -66,7 +66,7 @@ class GraphMLParserTest extends FunSpec with Matchers {
           </edge>
         </graph>
 
-      val res = GraphMLParser.parseEdges(graph \ "edge")
+      val res = GraphMLReader.parseEdges(graph \ "edge")
       res should have length 1
       res.head should equal (EdgeNode("n0", 1, "n1", 2))
     }
@@ -88,7 +88,7 @@ class GraphMLParserTest extends FunSpec with Matchers {
           </edge>
         </graph>
 
-      val res: TensorNetwork[NDTensor] = GraphMLParser.tensorNetworkFromXML(graph)
+      val res: TensorNetwork[NDTensor] = GraphMLReader.tensorNetworkFromXML(graph)
 
       res.tensors should have length 2
       //TODO: Check result

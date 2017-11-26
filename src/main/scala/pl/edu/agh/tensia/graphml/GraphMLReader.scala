@@ -6,7 +6,7 @@ import pl.edu.agh.tensia.tensor.{Dimension, NDTensor}
 import scala.collection.mutable
 import scala.xml._
 
-object GraphMLParser {
+object GraphMLReader {
   def tensorNetworkFromXML(xml: Elem): TensorNetwork[NDTensor] = {
     val nodes = parseNodes(xml \ "node")
     val edges = parseEdges(xml \ "edge")
