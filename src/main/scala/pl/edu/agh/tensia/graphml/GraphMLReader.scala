@@ -7,15 +7,23 @@ import scala.collection.mutable
 import scala.xml._
 
 object GraphMLReader {
-  def tensorNetworkFromXML(xml: Elem): TensorNetwork[NDTensor] = {
-    val nodes = parseNodes(xml \ "node")
+  def tensorNetworkFromXML(xml: Elem): (TensorNetwork[NDTensor], Seq[NDTensor]) = {
+    val nodesMap = parseNodes(xml \ "node")
     val edges = parseEdges(xml \ "edge")
     for (edge <- edges) {
-      val dimension: Dimension = nodes(edge.srcId).dims(edge.srcDimIndex)
-      nodes(edge.destId).dims(edge.destDimIndex) = dimension
+      val dimension: Dimension = nodesMap(edge.srcId).dims(edge.srcDimIndex)
+      nodesMap(edge.destId).dims(edge.destDimIndex) = dimension
     }
 
-    TensorNetwork(nodes.values.map(_.toTensor).toSeq)
+    val (lockedNodes, unlockedNodes) = nodesMap.values
+      .partition(_.locked)
+
+    val (lockedTensors, unlockedTensors) = (
+      lockedNodes.map(_.toTensor).toSeq,
+      unlockedNodes.map(_.toTensor).toSeq,
+    )
+    
+    (TensorNetwork(unlockedTensors ++ lockedTensors), lockedTensors)
   }
 
   def parseNodes(nodes: NodeSeq): mutable.Map[String, TensorNode] = {
@@ -30,7 +38,9 @@ object GraphMLReader {
 
     val dataPath = getDataByKey(node, "dataPath")
 
-    TensorNode(dataPath, dims)
+    val locked = tryGetDataNodeByKey(node, "locked").isDefined
+
+    TensorNode(dataPath, dims, locked)
   }
 
   def parseEdges(nodeSeq: NodeSeq): Seq[EdgeNode] = {
@@ -45,4 +55,7 @@ object GraphMLReader {
 
   private def getDataByKey(node: Node, id: String): String =
     (node \ "data").find(_ \@ "key" == id).get.text
+
+  private def tryGetDataNodeByKey(node: Node, id: String): Option[Node] =
+    (node \ "data").find(_ \@ "key" == id)
 }

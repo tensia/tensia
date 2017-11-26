@@ -54,6 +54,26 @@ class GraphMLReaderTest extends FunSpec with Matchers {
       res.dims(1) should have size 2
       res.dims(0) should not equal res.dims(1)
 
+      res.locked should be (false)
+
+      res.dataPath should be ("/path/to/data")
+    }
+    it("should parse locked node") {
+      val node =
+        <node>
+          <data key="shape">2,2</data>
+          <data key="dataPath">/path/to/data</data>
+          <data key="locked" />
+        </node>
+
+      val res = GraphMLReader.parseNode(node)
+      res.dims should have length 2
+      res.dims(0) should have size 2
+      res.dims(1) should have size 2
+      res.dims(0) should not equal res.dims(1)
+
+      res.locked should be (true)
+
       res.dataPath should be ("/path/to/data")
     }
 
@@ -88,7 +108,7 @@ class GraphMLReaderTest extends FunSpec with Matchers {
           </edge>
         </graph>
 
-      val res: TensorNetwork[NDTensor] = GraphMLReader.tensorNetworkFromXML(graph)
+      val res: TensorNetwork[NDTensor] = GraphMLReader.tensorNetworkFromXML(graph)._1
 
       res.tensors should have length 2
       //TODO: Check result
