@@ -4,11 +4,11 @@ xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">
   <graph id="0" edgedefault="undirected">
     <node id="0">
       <data key="shape">2,3</data>
-      <data key="dataPath">/home/bblaszkow/code/tensia/src/main/resources/a.bin</data>
+      <data key="dataPath">src/main/resources/a.bin</data>
     </node>
     <node id="1">
       <data key="shape">3,4</data>
-      <data key="dataPath">/home/bblaszkow/code/tensia/src/main/resources/b.bin</data>
+      <data key="dataPath">src/main/resources/b.bin</data>
     </node>
     <edge id="e1" source="0" target="1">
       <data key="srcDim">1</data>
