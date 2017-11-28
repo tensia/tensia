@@ -13,7 +13,7 @@ case class GraphMLWriter(gmlPath: String) {
   def write(tensor: NDTensor): Unit = {
     val dir = Paths.get(gmlPath).getParent
 
-    val file = dir.resolve("out.bin")
+    val file = dir.resolve("out.bin").toAbsolutePath
     Nd4j.write(Files.newOutputStream(file), tensor.content)
 
     val xml = wrapWithGraphML(
@@ -30,7 +30,7 @@ case class GraphMLWriter(gmlPath: String) {
     val pw = new PrintWriter(gmlPath)
     val xmlTensors: NodeSeq = tensors.zipWithIndex.map { case (tensor, i) =>
       val fileName = s"out$i.bin"
-      val file = dir.resolve(fileName)
+      val file = dir.resolve(fileName).toAbsolutePath
       Nd4j.write(Files.newOutputStream(file), tensor.content)
       tensorToXml(tensor, i.toString, fileName)
     }
@@ -49,7 +49,9 @@ object GraphMLWriter {
     </node>
   }
   def wrapWithGraph(nodes: NodeSeq): Elem =
-    <graph id="0" edgedefault="undirected">{nodes}</graph>
+    <graph id="0" edgedefault="undirected">
+      {nodes}
+    </graph>
 
   def wrapWithGraphML(nodeSeq: NodeSeq): Elem =
     <graphml xmlns="http://graphml.graphdrawing.org/xmlns"
