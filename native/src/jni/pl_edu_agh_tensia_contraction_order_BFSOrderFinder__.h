@@ -13,7 +13,7 @@ extern "C" {
  * Signature: ([I[[I[Z)Lpl/edu/agh/tensia/contraction/order/NativeOrderFinderResult;
  */
 JNIEXPORT jobject JNICALL Java_pl_edu_agh_tensia_contraction_order_BFSOrderFinder_00024_ord
-  (JNIEnv *, jobject, jintArray, jobjectArray, jint);
+  (JNIEnv *, jobject, jintArray, jobjectArray, jint, jint);
 
 #ifdef __cplusplus
 }

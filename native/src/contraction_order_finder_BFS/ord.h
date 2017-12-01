@@ -9,5 +9,5 @@
 
 uint64_t ord(
   int* tensors_sizes, int** contracted_dims_sizes, int locked_cnt,
-  int tensor_cnt, int*** order
+  int tensor_cnt, int min_dim_size, int*** order
 );

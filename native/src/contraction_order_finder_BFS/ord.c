@@ -161,23 +161,11 @@ uint64_t match_to_locked(GHashTable** best_contr_results, int tensor_cnt, int lo
   return best_cost;
 }
 
-/**
-Calculates best contraction order for parallel contraction computing
-@param tensors_sizes  array of products of dimensions sizes of each tensor
-@param contracted_dims_sizes  two-dimensional array of products of
-  contracted dimensions sizes of each pair of tensors; if there are no contracted
-  dimensions, size should equal 1
-@param tensor_cnt amount of tensors
-@param order  pointer to array of ints, through which contraction order tree
-  is returned, encoded with store_order function; for sample parser in python
-  see parse_ord.py
-@return total cost of contraction
-*/
-uint64_t ord(
-  int* tensors_sizes, int** contracted_dims_sizes, int locked_cnt,
-  int tensor_cnt, int*** order
-) {
 
+uint64_t do_ord(
+  int* tensors_sizes, int** contracted_dims_sizes, int locked_cnt,
+  int tensor_cnt, int*** order, uint64_t limit
+) {
   uint64_t lock_mask = (1 << locked_cnt) - 1;
   int unlocked_cnt = tensor_cnt - locked_cnt;
   // Array of hash tables, where ith table contains best results for all
@@ -194,6 +182,9 @@ uint64_t ord(
     debug_tensor(t, tensor_cnt);
     g_hash_table_insert(best_contr_results[0], (gpointer)&(t->origin), (gpointer)t);
   }
+
+  uint64_t min_rejected_size = ~(uint64_t)0;
+
   // Iterating through all stages, where ith stage computes best_contr_results[i]
   for(int stage=2; stage<=unlocked_cnt+1; stage++) {
     GHashTable* stage_content = best_contr_results[stage-1] = mk_hash_table();
@@ -223,7 +214,12 @@ uint64_t ord(
             Tensor* c = contract(t1, t2, contracted_dims_sizes);
             debug("c: ");
             debug_tensor(c, tensor_cnt);
-            reflect(stage_content, c);
+            if(c->total_cost <= limit) {
+              reflect(stage_content, c);
+            } else {
+              if(min_rejected_size > c->total_cost) min_rejected_size = c->total_cost;
+              free(c);
+            }
           } else debug("doesnt fit\n");
         }
         debug("\n");
@@ -232,29 +228,38 @@ uint64_t ord(
   }
 
 
-  uint64_t total_cost;
+  uint64_t result;
 
   if(locked_cnt == 0) {
-    Tensor* final_tensor = (Tensor*)g_list_first(g_hash_table_get_values(
-          best_contr_results[tensor_cnt-1]
-        ))->data;
-    // Storing contraction tree in array
-    *order = malloc(sizeof(int*));
-    **order = store_order(final_tensor->origin, best_contr_results, tensor_cnt, tensor_cnt);
-    total_cost = final_tensor->total_cost;
+    GList* result_data = g_list_first(g_hash_table_get_values(best_contr_results[tensor_cnt-1]));
+    if(result_data == NULL) {
+      *order = NULL;
+      result = min_rejected_size;
+    } else {
+      Tensor* final_tensor = (Tensor*)result_data->data;
+      // Storing contraction tree in array
+      *order = malloc(sizeof(int*));
+      **order = store_order(final_tensor->origin, best_contr_results, tensor_cnt, tensor_cnt);
+      result = final_tensor->total_cost;
+    }
   } else {
     uint64_t* origins;
-    total_cost = match_to_locked(best_contr_results, tensor_cnt, locked_cnt, &origins);
+    result = match_to_locked(best_contr_results, tensor_cnt, locked_cnt, &origins);
     debug("matching done\n");
-    *order = malloc(locked_cnt*sizeof(int*));
-    for(int i = 0; i < locked_cnt; i++) {
-      debug("storing tree %d\n", i);
-      debug_bits(origins[i], tensor_cnt);
-      debug("\n");
-      Tensor* t = get_contr_results(best_contr_results, origins[i]);
-      debug_tensor(t, tensor_cnt);
-      (*order)[i] = store_order(origins[i], best_contr_results, hamming0(origins[i]), tensor_cnt);
-      debug("stored tree %d\n", i);
+    if(result == 0) {
+      *order = NULL;
+      result = min_rejected_size;
+    } else {
+      *order = malloc(locked_cnt*sizeof(int*));
+      for(int i = 0; i < locked_cnt; i++) {
+        debug("storing tree %d\n", i);
+        debug_bits(origins[i], tensor_cnt);
+        debug("\n");
+        Tensor* t = get_contr_results(best_contr_results, origins[i]);
+        debug_tensor(t, tensor_cnt);
+        (*order)[i] = store_order(origins[i], best_contr_results, hamming0(origins[i]), tensor_cnt);
+        debug("stored tree %d\n", i);
+      }
     }
   }
 
@@ -262,5 +267,32 @@ uint64_t ord(
     debug("freeing %d %p\n", i, best_contr_results[i]);
     g_hash_table_destroy(best_contr_results[i]);
   }
-  return total_cost;
+  return result;
+}
+
+/**
+Calculates best contraction order for parallel contraction computing
+@param tensors_sizes  array of products of dimensions sizes of each tensor
+@param contracted_dims_sizes  two-dimensional array of products of
+  contracted dimensions sizes of each pair of tensors; if there are no contracted
+  dimensions, size should equal 1
+@param tensor_cnt amount of tensors
+@param order  pointer to array of ints, through which contraction order tree
+  is returned, encoded with store_order function; for sample parser in python
+  see parse_ord.py
+@return total cost of contraction
+*/
+uint64_t ord(
+  int* tensors_sizes, int** contracted_dims_sizes, int locked_cnt,
+  int tensor_cnt, int min_dim_size, int*** order
+) {
+  int total_size = 0;
+  for(int i=0; i < tensor_cnt; i++) total_size += tensors_sizes[i];
+  *order = NULL;
+  uint64_t result = 0;
+  for(uint64_t limit = 1; *order == NULL;){
+    result = do_ord(tensors_sizes, contracted_dims_sizes, locked_cnt, tensor_cnt, order, limit);
+    limit = max(result, min_dim_size*limit);
+  }
+  return result;
 }

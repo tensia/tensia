@@ -8,7 +8,7 @@
 
 JNIEXPORT jobject JNICALL Java_pl_edu_agh_tensia_contraction_order_BFSOrderFinder_00024_ord(
   JNIEnv* env, jobject obj, jintArray j_tensors_sizes,
-  jobjectArray j_contracted_dims_sizes, jint locked_cnt
+  jobjectArray j_contracted_dims_sizes, jint locked_cnt, jint min_dim_size
 ) {
     int tensor_cnt = (*env)->GetArrayLength(env, j_tensors_sizes);
     int* tensors_sizes = (int*)(*env)->GetIntArrayElements(env, j_tensors_sizes, 0);
@@ -21,7 +21,7 @@ JNIEXPORT jobject JNICALL Java_pl_edu_agh_tensia_contraction_order_BFSOrderFinde
 
     int** order = NULL;
     uint64_t cost =
-      ord(tensors_sizes, contracted_dims_sizes, locked_cnt, tensor_cnt, &order);
+      ord(tensors_sizes, contracted_dims_sizes, locked_cnt, tensor_cnt, min_dim_size, &order);
     debug("ord finished\n");
     for(int i=0; i<tensor_cnt; i++) {
       jintArray a =
