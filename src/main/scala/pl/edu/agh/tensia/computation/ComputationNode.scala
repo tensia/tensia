@@ -21,9 +21,7 @@ case class ComputationNode[T](tree: Tree[T]) extends Actor {
       node(op)
     case Leaf(provider) =>
       Future {
-        val res = Result[T](provider.get)
-        println("provided", res)
-        res
+        Result[T](provider.get)
       } pipeTo self
       forwardingResult
     case Empty =>
@@ -43,9 +41,7 @@ case class ComputationNode[T](tree: Tree[T]) extends Actor {
       res :: results match {
         case List(l, r) =>
           Future {
-            val res = Result(op(l, r))
-            println("contraction_result", res)
-            res
+            Result(op(l, r))
           } pipeTo self
           context become forwardingResult
         case l =>
